@@ -22,7 +22,3 @@ Thumbs.db
 # Turbo
 .turbo/
 
-# ─────────────────────────────────────────
-# 🔒 Documentación interna (NO subir a GitHub)
-# ─────────────────────────────────────────
-docs/internal/
