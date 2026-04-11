@@ -22,13 +22,15 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 ## Key Documentation Files
 
 The core project specifications are located in `docs/internal/`:
-- **[Vision & Business](docs/internal/1_vision_y_negocio.md):** Market problems, NFC strategy, and business model.
-- **[Architecture & Infra](docs/internal/2_arquitectura_e_infra.md):** Tech stack details and external AI integrations.
-- **[APIs & Communication](docs/internal/3_apis_y_comunicacion.md):** Real-time socket communication and manager API endpoints.
-- **[UX & Flows](docs/internal/4_ux_y_flujos.md):** User interface design principles and accessibility.
-- **[Local Engineering](docs/internal/5_ingenieria_local.md):** Development environment, commit standards, and testing procedures.
-- **[Finance & Economics](docs/internal/6_finanzas_y_economia.md):** Cost structure and revenue model.
-- **[Database Schema](docs/internal/7_base_de_datos.md):** Detailed ER diagram and data isolation strategy.
+- **[[Index|Bóveda del Proyecto]]**: Dashboard central y navegación.
+- **[[Vision|Visión y Negocio]]**: Problemas del mercado, estrategia NFC y modelo de negocio.
+- **[[Infraestructura|Arquitectura e Infra]]**: Detalles del tech stack e integraciones de IA externas.
+- **[[APIs|APIs y Comunicación]]**: Comunicación por sockets en tiempo real y endpoints de administrador.
+- **[[Diseño|UX y Flujos]]**: Principios de diseño de interfaz y accesibilidad.
+- **[[Ingenieria|Ingeniería Local]]**: Entorno de desarrollo, estándares de commit y procedimientos de prueba.
+- **[[Finanzas|Finanzas y Economía]]**: Estructura de costos y modelo de ingresos.
+- **[[BaseDeDatos|Esquema de Base de Datos]]**: Diagrama ER detallado y estrategia de aislamiento de datos.
+- **[[Analisis_Estrategico|Análisis Estratégico]]**: Análisis PESTEL y OKRs de la fase de lanzamiento.
 
 ## Development Conventions
 
