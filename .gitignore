@@ -22,3 +22,8 @@ Thumbs.db
 # Turbo
 .turbo/
 
+
+# Database
+*.db
+local.db-shm
+local.db-wal
