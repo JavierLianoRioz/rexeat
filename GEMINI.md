@@ -22,15 +22,15 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 ## Key Documentation Files
 
 The core project specifications are located in `docs/internal/`:
-- **[[Index|Bóveda del Proyecto]]**: Dashboard central y navegación.
-- **[[Vision|Visión y Negocio]]**: Problemas del mercado, estrategia NFC y modelo de negocio.
-- **[[Infraestructura|Arquitectura e Infra]]**: Detalles del tech stack e integraciones de IA externas.
-- **[[APIs|APIs y Comunicación]]**: Comunicación por sockets en tiempo real y endpoints de administrador.
-- **[[Diseño|UX y Flujos]]**: Principios de diseño de interfaz y accesibilidad.
-- **[[Ingenieria|Ingeniería Local]]**: Entorno de desarrollo, estándares de commit y procedimientos de prueba.
-- **[[Finanzas|Finanzas y Economía]]**: Estructura de costos y modelo de ingresos.
-- **[[BaseDeDatos|Esquema de Base de Datos]]**: Diagrama ER detallado y estrategia de aislamiento de datos.
-- **[[Analisis_Estrategico|Análisis Estratégico]]**: Análisis PESTEL y OKRs de la fase de lanzamiento.
+- **[Bóveda del Proyecto](docs/internal/README.md)**: Dashboard central y navegación.
+- **[Visión y Negocio](docs/internal/Vision.md)**: Problemas del mercado, estrategia NFC y modelo de negocio.
+- **[Arquitectura e Infra](docs/internal/Infraestructura.md)**: Detalles del tech stack e integraciones de IA externas.
+- **[APIs y Comunicación](docs/internal/APIs.md)**: Comunicación por sockets en tiempo real y endpoints de administrador.
+- **[UX y Flujos](docs/internal/Diseño.md)**: Principios de diseño de interfaz y accesibilidad.
+- **[Ingeniería Local](docs/internal/Ingenieria.md)**: Entorno de desarrollo, estándares de commit y procedimientos de prueba.
+- **[Finanzas y Economía](docs/internal/Finanzas.md)**: Estructura de costos y modelo de ingresos.
+- **[Base de Datos](docs/internal/BaseDeDatos.md)**: Diagrama ER detallado y estrategia de aislamiento de datos.
+- **[Análisis Estratégico](docs/internal/Analisis_Estrategico.md)**: Análisis PESTEL y OKRs de la fase de lanzamiento.
 
 ## Development Conventions
 
