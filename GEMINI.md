@@ -6,8 +6,8 @@ This repository serves as the central documentation and knowledge base for **Rex
 
 Rexeat aims to replace traditional PDF menus with a native, web-based experience that is mobile-friendly and instant. Key differentiators include:
 - **NFC-First Access:** Customers scan an NFC tag or QR code at their table to open the menu instantly.
-- **Dynamic Allergen Filtering:** Complies with EU 1169/2011 by providing active filtering for food intolerances.
-- **AI-Driven Digitization:** Uses Google Gemini to digitize paper menus and DeepL for professional-grade translations.
+- **Dynamic Allergen Filtering:** Provides active visual filtering for food intolerances based on **manual input** from the restaurant (EU 1169/2011 compliant interface).
+- **AI-Driven Digitization:** Uses Google Gemini to digitize paper menu names and prices; algergen data is strictly manual-only.
 - **Real-Time Stock Management:** Managers can mark items as "Out of Stock" instantly across all customer devices.
 
 ## Technical Stack & Architecture
