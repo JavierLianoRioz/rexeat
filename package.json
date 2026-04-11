@@ -33,5 +33,11 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
 }
