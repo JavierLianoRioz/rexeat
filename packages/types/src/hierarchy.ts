@@ -17,17 +17,7 @@ export const ZoneSchema = z.object({
   localId: z.uuid(),
   organizationId: OrganizationIdSchema,
   name: z.string().min(1),
+  nfcToken: z.string().min(1), // El token ahora vive en la Zona (la tarjeta NFC)
 });
 
 export type Zone = z.infer<typeof ZoneSchema>;
-
-export const TableSchema = z.object({
-  id: z.uuid(),
-  zoneId: z.uuid(),
-  localId: z.uuid(),
-  organizationId: OrganizationIdSchema,
-  number: z.string().min(1),
-  nfcToken: z.string().min(1),
-});
-
-export type Table = z.infer<typeof TableSchema>;

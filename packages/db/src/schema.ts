@@ -16,7 +16,7 @@ import {
 // --- Seguridad y Multi-inquilino ---
 
 export const organizations = sqliteTable("organizations", {
-  id: text("id").primaryKey(), // clerk_org_id
+  id: text("id").primaryKey(),
   businessName: text("business_name").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(
     sql`(strftime('%s', 'now'))`,
@@ -24,7 +24,7 @@ export const organizations = sqliteTable("organizations", {
 });
 
 export const users = sqliteTable("users", {
-  id: text("id").primaryKey(), // clerk_user_id
+  id: text("id").primaryKey(),
   organizationId: text("organization_id")
     .notNull()
     .references(() => organizations.id),
@@ -34,10 +34,10 @@ export const users = sqliteTable("users", {
   ),
 });
 
-// --- Estructura Física ---
+// --- Estructura Física (NFC Entry Points) ---
 
 export const locals = sqliteTable("locals", {
-  id: text("id").primaryKey(), // uuid
+  id: text("id").primaryKey(),
   organizationId: text("organization_id")
     .notNull()
     .references(() => organizations.id),
@@ -58,21 +58,7 @@ export const zones = sqliteTable("zones", {
     .notNull()
     .references(() => organizations.id),
   name: text("name").notNull(),
-});
-
-export const tables = sqliteTable("tables", {
-  id: text("id").primaryKey(),
-  zoneId: text("zone_id")
-    .notNull()
-    .references(() => zones.id),
-  localId: text("local_id")
-    .notNull()
-    .references(() => locals.id),
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organizations.id),
-  number: text("number").notNull(),
-  nfcToken: text("nfc_token").notNull().unique(),
+  nfcToken: text("nfc_token").notNull().unique(), // Acceso directo por tarjeta de zona
 });
 
 // --- Menú y Productos ---
@@ -84,7 +70,7 @@ export const products = sqliteTable("products", {
     .references(() => organizations.id),
   name: text("name", { mode: "json" }).$type<TranslatedString>().notNull(),
   description: text("description", { mode: "json" }).$type<TranslatedString>(),
-  price: integer("price").notNull(), // céntimos
+  price: integer("price").notNull(),
   allergens: text("allergens", { mode: "json" }).$type<AllergenMap>().notNull(),
   status: text("status")
     .$type<AvailabilityStatus>()
@@ -110,8 +96,6 @@ export const categories = sqliteTable("categories", {
     sql`(strftime('%s', 'now'))`,
   ),
 });
-
-// --- Relación N:M (Categorías <-> Productos) ---
 
 export const productsToCategories = sqliteTable(
   "products_to_categories",
