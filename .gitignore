@@ -27,3 +27,8 @@ local.db
 .gemini/
  
  
+
+# Database
+*.db
+local.db-shm
+local.db-wal
