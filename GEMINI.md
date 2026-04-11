@@ -1,4 +1,5 @@
 ---
+
 # Rexeat - Digital Menu System (Documentation Repository)
 
 This repository serves as the central documentation and knowledge base for **Rexeat**, a modern digital menu platform for restaurants and vacation rentals. It leverages NFC/QR technology to provide tourists with fast, accessible, and legally compliant (allergen-aware) digital menus.
@@ -6,6 +7,7 @@ This repository serves as the central documentation and knowledge base for **Rex
 ## Project Overview
 
 Rexeat aims to replace traditional PDF menus with a native, web-based experience that is mobile-friendly and instant. Key differentiators include:
+
 - **NFC-First Access:** Customers scan an NFC tag or QR code at their table to open the menu instantly.
 - **Dynamic Allergen Filtering:** Provides active visual filtering for food intolerances based on **manual input** from the restaurant (EU 1169/2011 compliant interface).
 - **AI-Driven Digitization:** Uses Google Gemini to digitize paper menu names and prices; algergen data is strictly manual-only.
@@ -23,6 +25,7 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 ## Key Documentation Files
 
 The core project specifications are located in `docs/internal/`:
+
 - **[Bóveda del Proyecto](docs/internal/README.md)**: Dashboard central y navegación.
 - **[Visión y Negocio](docs/internal/Vision.md)**: Problemas del mercado, estrategia NFC y modelo de negocio.
 - **[Arquitectura e Infra](docs/internal/Infraestructura.md)**: Detalles del tech stack e integraciones de IA externas.
@@ -40,6 +43,17 @@ The core project specifications are located in `docs/internal/`:
 - **Database:** Use **Drizzle ORM** for SQLite schema management.
 - **Performance:** Target LCP (Largest Contentful Paint) of < 1.2s for the customer-facing web menu.
 - **Data Safety:** Prices are always stored in **cents** as integers to avoid rounding errors.
+
+## AI Agent Memory & Guidelines
+
+To ensure consistency and high quality, the AI assistant MUST strictly follow the specialized skills defined in this repository. Before and during tasks, the agent should consult these references:
+
+- **Coding Quality**: [Clean Code](.agents/skills/clean-code/SKILL.md) & [Best Practices](.agents/skills/best-practices/SKILL.md)
+- **Version Control**: [Git Commit Helper](.agents/skills/git-commit-helper/SKILL.md)
+- **Architecture**: [Monorepo](.agents/skills/monorepo-architect/SKILL.md), [Multi-tenant SaaS](.agents/skills/saas-multi-tenant/SKILL.md), & [React Native](.agents/skills/react-native-architecture/SKILL.md)
+- **Database**: [Drizzle ORM Expert](.agents/skills/drizzle-orm-expert/SKILL.md) & [Database Architect](.agents/skills/database-architect/SKILL.md)
+- **Authentication**: [Clerk Auth](.agents/skills/clerk-auth/SKILL.md)
+- **User Experience**: [UX Research & Design](.agents/skills/ux-researcher-designer/SKILL.md)
 
 ## Usage
 
