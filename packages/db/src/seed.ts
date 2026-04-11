@@ -3,7 +3,6 @@ import {
   organizations,
   locals,
   zones,
-  tables,
   products,
   categories,
   productsToCategories,
@@ -11,7 +10,7 @@ import {
 import { Money } from "@rexeat/types";
 
 async function main() {
-  console.log("🌱 Iniciando siembra de datos (Seed)...");
+  console.log("🌱 Iniciando siembra de datos (Seed) corregida...");
 
   // 1. Crear Organización (Silo)
   const orgId = "org_cantabria_001";
@@ -32,22 +31,14 @@ async function main() {
     slug: "la-taberna-del-puerto",
   });
 
-  // 3. Crear Zonas y Mesas
+  // 3. Crear Zona con su tarjeta NFC (Simplificado)
   const zoneId = crypto.randomUUID();
   await db.insert(zones).values({
     id: zoneId,
     localId,
     organizationId: orgId,
-    name: "Terraza",
-  });
-
-  await db.insert(tables).values({
-    id: crypto.randomUUID(),
-    zoneId,
-    localId,
-    organizationId: orgId,
-    number: "Mesa 1",
-    nfcToken: "nfc_test_001",
+    name: "Terraza Principal",
+    nfcToken: "nfc_zona_terraza_001", // La tarjeta ahora apunta a toda la zona
   });
 
   // 4. Crear Categorías
@@ -69,7 +60,7 @@ async function main() {
       es: "Rabas frescas de la bahía con un toque de limón.",
       en: "Fresh squid from the bay.",
     },
-    price: Money.fromFloat(14.5), // 1450 céntimos
+    price: Money.fromFloat(14.5),
     allergens: { gluten: true, moluscos: true },
     status: "in_stock",
   });
@@ -80,7 +71,7 @@ async function main() {
     categoryId: catEntrantesId,
   });
 
-  console.log("✅ Siembra completada con éxito.");
+  console.log("✅ Siembra corregida completada con éxito.");
   process.exit(0);
 }
 
