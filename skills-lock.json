@@ -1,10 +1,110 @@
 {
   "version": 1,
   "skills": {
+    "Git Commit Helper": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "a41ae8539f2dfc0739a7762898cbbacca0d157e7235086fd1910fcf0fa115d4f"
+    },
+    "best-practices": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "98dafea60ec1a7f5f70f6febcdd4b4fa3fe15723ad9c0b991c0818615bff7ba6"
+    },
+    "clean-code": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "723e4955a7f12526cc4a182f085e41495bcbb8fae232e491e82e10926597624b"
+    },
+    "clerk-auth": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "5a684ba371a5f3aeac0cb90b6e9a65dd48da3ba50bad2dd4b5365c2ddd4a1e40"
+    },
+    "database-architect": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "6b9bca8a5aabfead64bbb462aa56827a2eaaf72ac9257aeb24c5a64ea1676ce2"
+    },
+    "database-design": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "c441de2beac978d466fec3347600ea3a6415db28f19c4d7677c951cbc41f4686"
+    },
+    "documentation-templates": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "472ac45ce6e28c89b4561ac686cf4a383fbbc78d9587697e5f9d972b061591e1"
+    },
+    "drizzle-orm-expert": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "f39da7fdfca57ffb67ab1d193254ab8b716d7dd00f031d352dd6ac14b83b5255"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",
       "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
+    },
+    "launch-strategy": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "edc052828d2be2c7bfab032212655f203b93415684f7b2a954ff7e6fe2b1a819"
+    },
+    "marketing-ideas": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "1dee790889e403e8fe1de691a35432f4c7ebd10b1fc3ef60f9c87e065763d697"
+    },
+    "mermaid-diagrams": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "a32e0c6517eb8250e32021c244ce60f3740257b4fcc7c180039d71acfd8d3046"
+    },
+    "monorepo-architect": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "954b24f0cfdbde49195640b95a1de2f390243daceb5cd35eeabad2c624ca9c71"
+    },
+    "obsidian-markdown": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "be3dc50a0753d17311e3d7865220e7a170e396180b9a95743731d801c0c48263"
+    },
+    "pricing-strategy": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "6d7d81d362ffe895d5031656e7f9c4959cdf8c64ebb2457c9f066e828f977800"
+    },
+    "product-strategist": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "8cc1c2d195c746221a6a1e5f420054917827748f042d1b7e59189611358e9390"
+    },
+    "react-native-architecture": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "a9fbc837c7bca51c2c84624e03b544989e47646472ced4cf295eacbd01db94d5"
+    },
+    "saas-multi-tenant": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "eca09a97f4e63ce21880ab0e8241578fbf5a5fd19cf505cfebe93f5a94e453ca"
+    },
+    "senior-prompt-engineer": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "10a3a50802429d4e542dc835634c8864d4eaf8d87a06f119f2e7ff3f772428ed"
+    },
+    "test-driven-development": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
+    },
+    "ux-researcher-designer": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "4e4fd356cdd7f3fc96888a2ab2fa13e8cae14f05b9a144528b0a16b7dc66443a"
     }
   }
 }
