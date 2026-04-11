@@ -1,3 +1,4 @@
+---
 # Rexeat - Digital Menu System (Documentation Repository)
 
 This repository serves as the central documentation and knowledge base for **Rexeat**, a modern digital menu platform for restaurants and vacation rentals. It leverages NFC/QR technology to provide tourists with fast, accessible, and legally compliant (allergen-aware) digital menus.
