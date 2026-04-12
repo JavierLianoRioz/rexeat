@@ -23,6 +23,12 @@ Bienvenido a la arquitectura central de **Rexeat**, un sistema de menú digital 
 - `pnpm build`: Compila las aplicaciones respetando el grafo de dependencias.
 - `pnpm lint`: Verifica la calidad del código en todo el monorepo.
 
+### 🧪 Validación de Infraestructura
+Para verificar que todas tus API Keys (Turso, DeepL, Gemini, R2) están correctamente configuradas en tu `.env`, ejecuta:
+```bash
+pnpm --filter @rexeat/db health-check
+```
+
 ### Estrategia de DX y Worktrees
 Para trabajar en tareas paralelas sin conflictos:
 `git worktree add ../rexeat-task-name feat/branch-name`
