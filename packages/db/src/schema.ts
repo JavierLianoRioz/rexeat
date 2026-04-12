@@ -81,6 +81,9 @@ export const products = sqliteTable("products", {
   description: text("description", { mode: "json" }).$type<TranslatedString>(),
   price: integer("price").notNull(),
   allergens: text("allergens", { mode: "json" }).$type<AllergenMap>().notNull(),
+  allergensConfirmed: integer("allergens_confirmed", { mode: "boolean" })
+    .notNull()
+    .default(false),
   status: text("status")
     .$type<AvailabilityStatus>()
     .notNull()
