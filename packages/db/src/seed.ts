@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { db } from "./index";
 import {
   organizations,
@@ -7,7 +8,7 @@ import {
   categories,
   productsToCategories,
 } from "./schema";
-import { Money, type Allergen } from "@rexeat/types";
+import { Money, type Allergen, type TranslatedString } from "@rexeat/types";
 import { fakerES as faker, faker as fakerEN } from "@faker-js/faker";
 
 const ALLERGENS: Allergen[] = [
@@ -117,6 +118,93 @@ const SPANISH_DISHES = [
   },
 ];
 
+const CANTABRIAN_DISHES = [
+  {
+    name: {
+      es: "Rabas de Santander",
+      en: "Santander-style Fried Squid",
+      fr: "Calmars frits style Santander",
+    },
+    desc: {
+      es: "Calamares frescos rebozados y fritos, un clásico de la bahía.",
+      en: "Fresh battered and fried squid, a classic from the bay.",
+      fr: "Calmars frais panés et frits, un classique de la baie.",
+    },
+    price: 1450,
+    allergens: { gluten: true, moluscos: true },
+  },
+  {
+    name: {
+      es: "Cocido Montañés",
+      en: "Cantabrian Mountain Stew",
+      fr: "Ragoût de montagne cantabre",
+    },
+    desc: {
+      es: "Guiso tradicional de alubia blanca, berza y compango de la matanza.",
+      en: "Traditional stew with white beans, cabbage, and local pork meats.",
+      fr: "Ragoût traditionnel de haricots blancs, chou et viandes de porc locales.",
+    },
+    price: 1600,
+    allergens: {},
+  },
+  {
+    name: {
+      es: "Anchoas de Santoña (8 uds)",
+      en: "Santoña Anchovies (8 pcs)",
+      fr: "Anchois de Santoña (8 pcs)",
+    },
+    desc: {
+      es: "Anchoas premium sobadas a mano en aceite de oliva.",
+      en: "Premium hand-prepared anchovies in olive oil.",
+      fr: "Anchois de première qualité préparés à la main dans l'huile d'olive.",
+    },
+    price: 2200,
+    allergens: { pescado: true },
+  },
+  {
+    name: {
+      es: "Almejas a la Marinera",
+      en: "Clams in Marinara Sauce",
+      fr: "Palourdes à la marinière",
+    },
+    desc: {
+      es: "Almejas de Pedreña cocinadas con salsa de vino blanco y ajo.",
+      en: "Pedreña clams cooked in a white wine and garlic sauce.",
+      fr: "Palourdes de Pedreña cuites dans une sauce au vin blanco y à l'ail.",
+    },
+    price: 2400,
+    allergens: { moluscos: true, gluten: true },
+  },
+  {
+    name: {
+      es: "Sorropotún de San Vicente",
+      en: "Tuna and Potato Stew",
+      fr: "Ragoût de thon et pommes de terre",
+    },
+    desc: {
+      es: "Guiso marinero de bonito del norte con patatas y pimiento.",
+      en: "Seafarer's stew with Northern tuna, potatoes, and peppers.",
+      fr: "Ragoût de marin au thon du Nord, pommes de terre et poivrons.",
+    },
+    price: 1850,
+    allergens: { pescado: true },
+  },
+  {
+    name: {
+      es: "Quesada Pasiega",
+      en: "Pasiega Cheesecake",
+      fr: "Gâteau au fromage Pasiega",
+    },
+    desc: {
+      es: "Postre típico de los Valles Pasiegos con leche de vaca cuajada.",
+      en: "Typical dessert from the Pasiego Valleys with curdled cow's milk.",
+      fr: "Dessert typique des vallées de Pasiego à base de lait de vache caillé.",
+    },
+    price: 650,
+    allergens: { lacteos: true, huevos: true, gluten: true },
+  },
+];
+
 async function cleanupDatabase() {
   await db.delete(productsToCategories);
   await db.delete(categories);
@@ -220,33 +308,102 @@ async function createProducts(orgId: string, categoryIds: string[]) {
   }
 }
 
-async function seedRestaurant(index: number) {
-  const orgId = faker.string.uuid();
-  const name = faker.company.name();
-  const slug = `${faker.helpers.slugify(name).toLowerCase()}-${faker.string.alphanumeric(4)}`;
-
-  console.log(`🏢 [${index + 1}/${CONFIG.RESTAURANTS}] ${name}`);
-
-  await db.insert(organizations).values({ id: orgId, businessName: name });
-
+async function createLocalBase(
+  orgId: string,
+  name: string | TranslatedString,
+  slug: string,
+) {
   const localId = faker.string.uuid();
+  const localizedName =
+    typeof name === "string" ? { es: name, en: `${name} International` } : name;
+
   await db.insert(locals).values({
     id: localId,
     organizationId: orgId,
-    name: { es: name, en: `${name} International` },
+    name: localizedName,
     slug,
     logo: getRandomImage(200, 200),
   });
 
   await createZones(localId, orgId);
+  return localId;
+}
+
+async function createOrgAndLocal(name: string, slug?: string) {
+  const orgId = faker.string.uuid();
+  const finalSlug =
+    slug ||
+    `${faker.helpers.slugify(name).toLowerCase()}-${faker.string.alphanumeric(4)}`;
+
+  await db.insert(organizations).values({ id: orgId, businessName: name });
+  const localId = await createLocalBase(orgId, name, finalSlug);
+
+  return { orgId, localId };
+}
+
+async function seedRestaurant(index: number) {
+  const name = faker.company.name();
+  console.log(`🏢 [${index + 1}/${CONFIG.RESTAURANTS}] ${name}`);
+
+  const { orgId } = await createOrgAndLocal(name);
   const categoryIds = await createCategories(orgId);
   await createProducts(orgId, categoryIds);
+}
+
+async function seedCantabrianRestaurant() {
+  const name = "La Taberna del Puerto";
+  console.log(`⚓ [ESPECIAL] ${name} (Cantabria)`);
+
+  const { orgId } = await createOrgAndLocal(name, "taberna-puerto");
+
+  const categoryTemplates = [
+    { es: "Entrantes", en: "Starters", fr: "Entrées" },
+    { es: "Platos Principales", en: "Main Courses", fr: "Plats Principaux" },
+    { es: "Postres", en: "Desserts", fr: "Desserts" },
+  ];
+
+  const categoryIds: string[] = [];
+  for (let i = 0; i < categoryTemplates.length; i++) {
+    const id = faker.string.uuid();
+    await db.insert(categories).values({
+      id,
+      organizationId: orgId,
+      name: categoryTemplates[i]!,
+      order: i,
+    });
+    categoryIds.push(id);
+  }
+
+  for (const dish of CANTABRIAN_DISHES) {
+    const id = faker.string.uuid();
+    await db.insert(products).values({
+      id,
+      organizationId: orgId,
+      name: dish.name,
+      description: dish.desc,
+      price: dish.price,
+      allergens: dish.allergens,
+      status: "in_stock",
+      image: getRandomImage(800, 600),
+    });
+
+    let catId = categoryIds[1]!;
+    if (dish.name.es.includes("Rabas") || dish.name.es.includes("Anchoas"))
+      catId = categoryIds[0]!;
+    if (dish.name.es.includes("Quesada")) catId = categoryIds[2]!;
+
+    await db
+      .insert(productsToCategories)
+      .values({ productId: id, categoryId: catId });
+  }
 }
 
 async function main() {
   try {
     console.log("🌱 Starting seed with fixed Spanish localization...");
     await cleanupDatabase();
+
+    await seedCantabrianRestaurant();
 
     for (let i = 0; i < CONFIG.RESTAURANTS; i++) {
       await seedRestaurant(i);
