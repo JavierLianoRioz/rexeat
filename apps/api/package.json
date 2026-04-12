@@ -7,8 +7,15 @@
     "deploy": "vercel"
   },
   "dependencies": {
+    "@clerk/backend": "^3.2.8",
+    "@clerk/types": "^4.101.20",
+    "@google/generative-ai": "^0.24.1",
+    "@hono/clerk-auth": "^3.1.1",
     "@rexeat/db": "workspace:*",
     "@rexeat/types": "workspace:*",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39"
   }
 }
