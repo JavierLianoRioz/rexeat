@@ -4,13 +4,23 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "vercel dev",
-    "deploy": "vercel"
+    "deploy": "vercel",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1029.0",
+    "@clerk/backend": "^3.2.8",
+    "@clerk/types": "^4.101.20",
     "@google/generative-ai": "^0.24.1",
+    "@hono/clerk-auth": "^3.1.1",
+    "@hono/zod-validator": "^0.4.3",
     "@rexeat/db": "workspace:*",
     "@rexeat/types": "workspace:*",
-    "zod": "^4.3.6"
+    "hono": "^4.7.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "typescript": "^5.8.2"
   }
 }

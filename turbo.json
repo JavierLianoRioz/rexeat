@@ -1,5 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "GEMINI_API_KEY",
+    "DEEPL_API_KEY",
+    "DATABASE_URL",
+    "DATABASE_AUTH_TOKEN",
+    "CLERK_SECRET_KEY",
+    "CLERK_PUBLISHABLE_KEY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
