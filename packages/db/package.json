@@ -16,6 +16,7 @@
     "health-check": "tsx src/check-health.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
     "@libsql/client": "^0.17.2",
     "@rexeat/types": "workspace:*",
     "better-sqlite3": "^12.8.0",
