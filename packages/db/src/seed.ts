@@ -8,7 +8,7 @@ import {
   categories,
   productsToCategories,
 } from "./schema";
-import { Money, type Allergen } from "@rexeat/types";
+import { Money, type Allergen, type TranslatedString } from "@rexeat/types";
 import { fakerES as faker, faker as fakerEN } from "@faker-js/faker";
 
 const ALLERGENS: Allergen[] = [
