@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle as drizzleLibsql, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { drizzle as drizzleBetterSqlite, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { createClient } from "@libsql/client";
 import {
   eq,
@@ -9,36 +10,38 @@ import {
 import { type AllergenMap } from "@rexeat/types";
 import * as schema from "./schema";
 
-// Función para inicializar la conexión según el entorno
-export const createDb = (customUrl?: string) => {
+/**
+ * Union type for the application database to avoid 'any'
+ */
+export type AppDatabase = LibSQLDatabase<typeof schema> | BetterSQLite3Database<typeof schema>;
+
+/**
+ * Factory function to initialize database connection based on environment
+ */
+export const createDb = (customUrl?: string): AppDatabase => {
   const url = customUrl ?? process.env["DATABASE_URL"];
   const authToken = process.env["DATABASE_AUTH_TOKEN"];
 
   if (url && url !== ":memory:") {
     const client = createClient({ url, authToken: authToken ?? "" });
-    return drizzle(client, { schema });
+    return drizzleLibsql(client, { schema });
   }
 
-  // Fallback para desarrollo local o tests (:memory:)
+  // Fallback for local development or tests
   try {
     const BetterSQLite3 = require("better-sqlite3");
     const sqlite = new BetterSQLite3(url ?? "local.db");
-    const { drizzle: drizzleSqlite } = require("drizzle-orm/better-sqlite3");
-    return drizzleSqlite(sqlite, { schema });
-  } catch (e) {
-    throw new Error("No database connection available (Turso or local SQLite)");
+    return drizzleBetterSqlite(sqlite, { schema });
+  } catch (error) {
+    throw new Error("Failed to initialize database connection: Check your environment variables or local SQLite installation.");
   }
 };
 
 export const db = createDb();
 
-// Re-exportamos tipos para uso global
-export type DB = typeof db;
+// Domain Types
 export type Product = InferSelectModel<typeof schema.products>;
-export type NewProduct = Omit<
-  InferInsertModel<typeof schema.products>,
-  "organizationId"
->;
+export type NewProduct = Omit<InferInsertModel<typeof schema.products>, "organizationId">;
 export type Category = InferSelectModel<typeof schema.categories>;
 export type Local = InferSelectModel<typeof schema.locals>;
 export type Organization = InferSelectModel<typeof schema.organizations>;
@@ -59,10 +62,13 @@ export interface ITenantRepository {
   getInfo(): Promise<Organization | null>;
 }
 
+/**
+ * Repository for tenant-specific data operations with mandatory isolation
+ */
 export class TenantRepository implements ITenantRepository {
   constructor(
     private readonly organizationId: string,
-    private readonly database: any = db,
+    private readonly database: AppDatabase = db,
   ) {}
 
   async getProducts(): Promise<Product[]> {
@@ -81,15 +87,7 @@ export class TenantRepository implements ITenantRepository {
       } as InferInsertModel<typeof schema.products>)
       .returning();
 
-    const createdProduct = results[0];
-
-    if (!createdProduct) {
-      throw new Error(
-        `Failed to create product in organization: ${this.organizationId}`,
-      );
-    }
-
-    return createdProduct;
+    return this.validateOperationResult(results[0], `create product in organization: ${this.organizationId}`);
   }
 
   async updateProductStatusWithLog({
@@ -103,35 +101,13 @@ export class TenantRepository implements ITenantRepository {
     newStatus: schema.AvailabilityStatus;
     reason?: string;
   }): Promise<void> {
-    // Better-sqlite3 requiere transacciones síncronas, libSQL asíncronas.
-    // Usamos el database inyectado.
-    await this.database.transaction(async (tx: any) => {
-      // 1. Obtener producto actual para validar pertenencia y estado previo
-      const results = await tx
-        .select()
-        .from(schema.products)
-        .where(
-          and(
-            eq(schema.products.id, productId),
-            eq(schema.products.organizationId, this.organizationId),
-          ),
-        );
-      
-      const product = results[0];
+    await this.database.transaction(async (tx) => {
+      const product = await this.fetchAndValidateProduct(tx, productId);
 
-      if (!product) {
-        throw new Error(`Product ${productId} not found in this organization`);
-      }
-
-      // 2. Actualizar estado del producto
       await tx.update(schema.products)
-        .set({
-          status: newStatus,
-          updatedAt: new Date(),
-        })
+        .set({ status: newStatus, updatedAt: new Date() })
         .where(eq(schema.products.id, productId));
 
-      // 3. Crear registro de auditoría
       await tx.insert(schema.productStockLogs)
         .values({
           id: crypto.randomUUID(),
@@ -145,10 +121,7 @@ export class TenantRepository implements ITenantRepository {
     });
   }
 
-  async confirmAllergens(
-    productId: string,
-    allergens: AllergenMap,
-  ): Promise<Product> {
+  async confirmAllergens(productId: string, allergens: AllergenMap): Promise<Product> {
     const results = await this.database
       .update(schema.products)
       .set({
@@ -164,12 +137,7 @@ export class TenantRepository implements ITenantRepository {
       )
       .returning();
 
-    const updatedProduct = results[0];
-    if (!updatedProduct) {
-      throw new Error(`Product not found or unauthorized: ${productId}`);
-    }
-
-    return updatedProduct;
+    return this.validateOperationResult(results[0], `Product not found or unauthorized: ${productId}`);
   }
 
   async getCategories(): Promise<Category[]> {
@@ -194,13 +162,35 @@ export class TenantRepository implements ITenantRepository {
 
     return results[0] ?? null;
   }
+
+  // --- Helper Methods ---
+
+  private async fetchAndValidateProduct(tx: any, productId: string): Promise<Product> {
+    const results = await tx
+      .select()
+      .from(schema.products)
+      .where(
+        and(
+          eq(schema.products.id, productId),
+          eq(schema.products.organizationId, this.organizationId),
+        ),
+      );
+
+    return this.validateOperationResult(results[0], `Product ${productId} not found in this organization`);
+  }
+
+  private validateOperationResult<T>(result: T | undefined, errorMessage: string): T {
+    if (!result) {
+      throw new Error(`Database Operation Error: ${errorMessage}`);
+    }
+    return result;
+  }
 }
 
 export const createTenantRepository = (
   id: string,
-  database?: any,
+  database?: AppDatabase,
 ): ITenantRepository => new TenantRepository(id, database);
-
 
 export * from "./schema";
 export * from "drizzle-orm";
