@@ -51,7 +51,7 @@ async function validateMenu() {
   }
 
   console.log(`\n🚨 Se encontraron ${allIssues.length} problemas:\n`);
-  allIssues.forEach((issue) => console.log(issue));
+  allIssues.forEach((issue: string) => console.log(issue));
   process.exit(1);
 }
 

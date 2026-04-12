@@ -1,0 +1,14 @@
+{
+  "name": "@rexeat/api",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "@rexeat/db": "workspace:*",
+    "@rexeat/types": "workspace:*",
+    "zod": "^4.3.6"
+  }
+}

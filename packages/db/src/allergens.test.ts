@@ -1,20 +1,18 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { sql } from "drizzle-orm";
-import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { createDb, TenantRepository, organizations, products } from "./index";
-import * as schema from "./schema";
 
 describe("TenantRepository - Allergen Safety", () => {
-  let testDb: BetterSQLite3Database<typeof schema>;
+  let testDb: any;
   const ORG_A = "org_alfa";
   const ORG_B = "org_beta";
 
   beforeEach(async () => {
-    testDb = createDb(":memory:");
+    testDb = createDb();
 
     const tables = [
-      `CREATE TABLE organizations (id TEXT PRIMARY KEY, business_name TEXT, created_at INTEGER)`,
-      `CREATE TABLE products (id TEXT PRIMARY KEY, organization_id TEXT, name TEXT, description TEXT, price INTEGER, allergens TEXT, allergens_confirmed INTEGER DEFAULT 0, status TEXT, image TEXT, created_at INTEGER, updated_at INTEGER)`,
+      `CREATE TABLE IF NOT EXISTS organizations (id TEXT PRIMARY KEY, business_name TEXT, created_at INTEGER)`,
+      `CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, organization_id TEXT, name TEXT, description TEXT, price INTEGER, allergens TEXT, allergens_confirmed INTEGER DEFAULT 0, status TEXT, image TEXT, created_at INTEGER, updated_at INTEGER)`,
     ];
 
     for (const table of tables) {

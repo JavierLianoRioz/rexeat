@@ -1,24 +1,39 @@
-import {
-  drizzle,
-  type BetterSQLite3Database,
-} from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 import {
   eq,
   and,
   type InferSelectModel,
   type InferInsertModel,
 } from "drizzle-orm";
-import Database from "better-sqlite3";
 import { type AllergenMap } from "@rexeat/types";
 import * as schema from "./schema";
 
-export const createDb = (path = "local.db") => {
-  const sqlite = new Database(path);
-  return drizzle(sqlite, { schema });
+// Función para inicializar la conexión según el entorno
+export const createDb = () => {
+  const url = process.env["DATABASE_URL"];
+  const authToken = process.env["DATABASE_AUTH_TOKEN"];
+
+  if (url) {
+    const client = createClient({ url, authToken: authToken ?? "" });
+    return drizzle(client, { schema });
+  }
+
+  // Fallback para desarrollo local si no hay URL de Turso
+  try {
+    const BetterSQLite3 = require("better-sqlite3");
+    const sqlite = new BetterSQLite3("local.db");
+    const { drizzle: drizzleSqlite } = require("drizzle-orm/better-sqlite3");
+    return drizzleSqlite(sqlite, { schema });
+  } catch (e) {
+    throw new Error("No database connection available (Turso or local SQLite)");
+  }
 };
 
 export const db = createDb();
 
+// Re-exportamos tipos para uso global
+export type DB = typeof db;
 export type Product = InferSelectModel<typeof schema.products>;
 export type NewProduct = Omit<
   InferInsertModel<typeof schema.products>,
@@ -47,7 +62,7 @@ export interface ITenantRepository {
 export class TenantRepository implements ITenantRepository {
   constructor(
     private readonly organizationId: string,
-    private readonly database: BetterSQLite3Database<typeof schema> = db,
+    private readonly database: any = db,
   ) {}
 
   async getProducts(): Promise<Product[]> {
@@ -88,10 +103,11 @@ export class TenantRepository implements ITenantRepository {
     newStatus: schema.AvailabilityStatus;
     reason?: string;
   }): Promise<void> {
-    // Better-sqlite3 requiere transacciones síncronas
-    db.transaction((tx) => {
+    // Better-sqlite3 requiere transacciones síncronas, libSQL asíncronas.
+    // Usamos el database inyectado.
+    await this.database.transaction(async (tx: any) => {
       // 1. Obtener producto actual para validar pertenencia y estado previo
-      const product = tx
+      const results = await tx
         .select()
         .from(schema.products)
         .where(
@@ -99,24 +115,24 @@ export class TenantRepository implements ITenantRepository {
             eq(schema.products.id, productId),
             eq(schema.products.organizationId, this.organizationId),
           ),
-        )
-        .get(); // Uso .get() para ejecución síncrona de una única fila
+        );
+      
+      const product = results[0];
 
       if (!product) {
         throw new Error(`Product ${productId} not found in this organization`);
       }
 
       // 2. Actualizar estado del producto
-      tx.update(schema.products)
+      await tx.update(schema.products)
         .set({
           status: newStatus,
           updatedAt: new Date(),
         })
-        .where(eq(schema.products.id, productId))
-        .run(); // Uso .run() para ejecución síncrona
+        .where(eq(schema.products.id, productId));
 
       // 3. Crear registro de auditoría
-      tx.insert(schema.productStockLogs)
+      await tx.insert(schema.productStockLogs)
         .values({
           id: crypto.randomUUID(),
           productId,
@@ -125,8 +141,7 @@ export class TenantRepository implements ITenantRepository {
           oldStatus: product.status,
           newStatus,
           reason,
-        })
-        .run();
+        });
     });
   }
 
@@ -183,8 +198,9 @@ export class TenantRepository implements ITenantRepository {
 
 export const createTenantRepository = (
   id: string,
-  database?: BetterSQLite3Database<typeof schema>,
+  database?: any,
 ): ITenantRepository => new TenantRepository(id, database);
+
 
 export * from "./schema";
 export * from "drizzle-orm";
