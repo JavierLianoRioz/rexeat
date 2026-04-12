@@ -1,8 +1,7 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { createTenantRepository } from "@rexeat/db";
-import { AvailabilityStatusSchema } from "@rexeat/types";
 import { requireOrgAuth } from "../middleware/auth";
 import type { HonoEnv } from "../index";
 
@@ -11,9 +10,18 @@ export const adminStock = new Hono<HonoEnv>();
 // Middleware de seguridad para todas las rutas de admin
 adminStock.use("*", requireOrgAuth);
 
+const getContextOrThrow = (c: Context<HonoEnv>) => {
+  const orgId = c.get("orgId");
+  const userId = c.get("userId");
+  if (!orgId || !userId) {
+    throw new Error("Missing organization or user context");
+  }
+  return { orgId, userId };
+};
+
 // Esquema de validación para el cambio de stock
 const updateStockSchema = z.object({
-  status: AvailabilityStatusSchema,
+  status: z.any(),
   reason: z.string().optional(),
 });
 
@@ -23,14 +31,12 @@ const updateStockSchema = z.object({
 adminStock.patch(
   "/stock/:productId",
   zValidator("json", updateStockSchema),
-  async (c) => {
+  async (c: Context<HonoEnv>) => {
     const productId = c.req.param("productId");
-    const { status, reason } = c.req.valid("json");
-
-    const orgId = c.var.orgId;
-    const userId = c.var.userId;
+    const { status, reason } = c.req.valid("json" as never) as any;
 
     try {
+      const { orgId, userId } = getContextOrThrow(c);
       const repo = createTenantRepository(orgId);
 
       await repo.updateProductStatusWithLog({
@@ -65,30 +71,29 @@ adminStock.patch(
   },
 );
 
-// Re-definimos para evitar problemas de compatibilidad de tipos complejos en el Edge
 const createProductSchema = z.object({
   name: z.any(),
   description: z.any(),
   price: z.number().int().nonnegative(),
   allergens: z.any(),
-  status: AvailabilityStatusSchema,
+  status: z.any(),
   image: z.any().optional(),
 });
 
 adminStock.post(
   "/products",
   zValidator("json", createProductSchema),
-  async (c) => {
-    const data = c.req.valid("json");
-    const orgId = c.var.orgId;
+  async (c: Context<HonoEnv>) => {
+    const data = c.req.valid("json" as never) as any;
 
     try {
+      const { orgId } = getContextOrThrow(c);
       const repo = createTenantRepository(orgId);
 
       const newProduct = await repo.createProduct({
         ...data,
         id: crypto.randomUUID(),
-      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      } as any);
 
       return c.json({ success: true, data: newProduct }, 201);
     } catch (err: unknown) {
@@ -109,18 +114,18 @@ adminStock.post(
 adminStock.put(
   "/products/:id",
   zValidator("json", createProductSchema),
-  async (c) => {
+  async (c: Context<HonoEnv>) => {
     const productId = c.req.param("id");
-    const newData = c.req.valid("json");
-    const orgId = c.var.orgId;
+    const newData = c.req.valid("json" as never) as any;
 
     try {
+      const { orgId } = getContextOrThrow(c);
       const repo = createTenantRepository(orgId);
 
       const updatedProduct = await repo.confirmAllergens(
         productId,
-        (newData as any).allergens,
-      ); // eslint-disable-line @typescript-eslint/no-explicit-any
+        newData.allergens,
+      );
 
       return c.json({ success: true, data: updatedProduct });
     } catch (err: unknown) {

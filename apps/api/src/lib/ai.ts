@@ -2,6 +2,7 @@ import {
   GoogleGenerativeAI,
   type GenerativeModel,
 } from "@google/generative-ai";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   type TranslatedString,
   type DigitizationItem,
@@ -18,29 +19,60 @@ interface DeepLTranslationResponse {
 
 /**
  * Cliente de IA para Rexeat.
- * Gestiona digitalización con Gemini y traducciones con DeepL.
+ * Gestiona digitalización con Gemini, traducciones con DeepL y persistencia en R2.
  */
 export class AIClient {
   private genAI: GoogleGenerativeAI;
   private geminiModel: GenerativeModel;
+  private s3Client: S3Client;
 
   constructor(
-    private readonly geminiApiKey: string,
-    private readonly deeplApiKey: string,
+    private readonly config: {
+      geminiApiKey: string;
+      deeplApiKey: string;
+      r2AccountId: string;
+      r2AccessKeyId: string;
+      r2SecretAccessKey: string;
+      r2BucketName: string;
+    }
   ) {
-    this.genAI = new GoogleGenerativeAI(this.geminiApiKey);
+    this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
     this.geminiModel = this.genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
+    });
+    
+    this.s3Client = new S3Client({
+      region: "auto",
+      endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: config.r2AccessKeyId,
+        secretAccessKey: config.r2SecretAccessKey,
+      },
     });
   }
 
   /**
-   * Digitaliza una imagen de menú físico usando Gemini.
+   * Digitaliza una imagen de menú físico usando Gemini y la persiste en R2.
    */
   async digitizeMenu(
     imageBuffer: ArrayBuffer,
     mimeType: string,
   ): Promise<DigitizationItem[]> {
+    const requestId = crypto.randomUUID();
+    const fileExtension = mimeType.split("/")[1] || "jpg";
+    const fileName = `uploads/${requestId}.${fileExtension}`;
+
+    // 1. Persistencia en R2 (Auditoría y almacenamiento)
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.config.r2BucketName,
+        Key: fileName,
+        Body: new Uint8Array(imageBuffer),
+        ContentType: mimeType,
+      })
+    );
+
+    // 2. Procesamiento con Gemini
     const prompt = `
       Analiza esta imagen de un menú de restaurante.
       Extrae todos los platos, bebidas y productos con sus precios.
@@ -82,7 +114,7 @@ export class AIClient {
 
       const validated = DigitizationResponseSchema.parse({
         items: parsed.items,
-        requestId: crypto.randomUUID(),
+        requestId,
       });
 
       return validated.items;
@@ -122,7 +154,7 @@ export class AIClient {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `DeepL-Auth-Key ${this.deeplApiKey}`,
+        Authorization: `DeepL-Auth-Key ${this.config.deeplApiKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({

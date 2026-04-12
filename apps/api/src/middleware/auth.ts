@@ -1,11 +1,12 @@
 import { createMiddleware } from "hono/factory";
 import { getAuth } from "@hono/clerk-auth";
+import type { HonoEnv } from "../index";
 
 /**
  * Middleware para requerir autenticación de Clerk y validar la organización.
  * Inyecta el context de la organización en la petición.
  */
-export const requireOrgAuth = createMiddleware(async (c, next) => {
+export const requireOrgAuth = createMiddleware<HonoEnv>(async (c, next) => {
   const auth = getAuth(c);
 
   if (!auth?.userId) {

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import {
   db,
   categories,
@@ -17,8 +17,12 @@ export const publicMenu = new Hono();
  * Devuelve el menú completo de un local basado en su slug público.
  * Optimizado para LCP < 1.2s y uso de caché en el Edge.
  */
-publicMenu.get("/menu/:slug", async (c) => {
+publicMenu.get("/menu/:slug", async (c: Context) => {
   const slug = c.req.param("slug");
+
+  if (!slug) {
+    return c.json({ error: { code: "BAD_REQUEST", message: "Slug is required" } }, 400);
+  }
 
   // 1. Resolver el Local y su Organización asociada
   const result = await db
@@ -31,7 +35,7 @@ publicMenu.get("/menu/:slug", async (c) => {
     .where(eq(locals.slug, slug))
     .limit(1);
 
-  const data = result[0];
+  const data = result[0] as any;
 
   if (!data) {
     return c.json(
@@ -62,8 +66,8 @@ publicMenu.get("/menu/:slug", async (c) => {
   const menuCategories = allCategories.map((cat: Category) => {
     // Filtrar productos que pertenecen a esta categoría según la tabla pivot
     const categoryProductIds = allRelations
-      .filter((rel: any) => rel.categoryId === cat.id) // eslint-disable-line @typescript-eslint/no-explicit-any
-      .map((rel: any) => rel.productId); // eslint-disable-line @typescript-eslint/no-explicit-any
+      .filter((rel: any) => rel.categoryId === cat.id)
+      .map((rel: any) => rel.productId);
 
     const categoryProducts = allProducts
       .filter((prod: Product) => categoryProductIds.includes(prod.id))
@@ -92,7 +96,7 @@ publicMenu.get("/menu/:slug", async (c) => {
     organization: {
       id: org.id,
       name: org.businessName,
-      logo: (local.logo as any)?.url || null, // eslint-disable-line @typescript-eslint/no-explicit-any
+      logo: (local.logo as any)?.url || null,
       theme: {
         primary: "#1a2b3c",
       },

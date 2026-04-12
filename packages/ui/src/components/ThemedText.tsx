@@ -14,15 +14,19 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
+  const typeStyles = {
+    default: styles.default,
+    title: styles.title,
+    defaultSemiBold: styles.defaultSemiBold,
+    subtitle: styles.subtitle,
+    link: styles.link,
+  };
+
   return (
     <Text
       style={[
         { color: lightColor },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        typeStyles[type],
         style,
       ]}
       {...rest}

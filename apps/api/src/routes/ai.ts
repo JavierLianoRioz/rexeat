@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { AIClient } from "../lib/ai";
@@ -14,7 +14,7 @@ aiRoutes.use("*", requireOrgAuth);
  * POST /api/admin/digitize
  * Sube una foto de un menú físico y la digitaliza usando Gemini.
  */
-aiRoutes.post("/digitize", async (c) => {
+aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
   const formData = await c.req.formData();
   const image = formData.get("image") as File;
 
@@ -32,13 +32,17 @@ aiRoutes.post("/digitize", async (c) => {
 
   const geminiKey = process.env["GEMINI_API_KEY"];
   const deeplKey = process.env["DEEPL_API_KEY"];
+  const r2AccountId = process.env["R2_ACCOUNT_ID"];
+  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
+  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
+  const r2BucketName = process.env["R2_BUCKET_NAME"];
 
-  if (!geminiKey || !deeplKey) {
+  if (!geminiKey || !deeplKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
     return c.json(
       {
         error: {
           code: "CONFIG_ERROR",
-          message: "Servicios de IA no configurados",
+          message: "Servicios de IA o Almacenamiento no configurados",
         },
       },
       500,
@@ -46,7 +50,14 @@ aiRoutes.post("/digitize", async (c) => {
   }
 
   try {
-    const aiClient = new AIClient(geminiKey, deeplKey);
+    const aiClient = new AIClient({
+      geminiApiKey: geminiKey,
+      deeplApiKey: deeplKey,
+      r2AccountId,
+      r2AccessKeyId,
+      r2SecretAccessKey,
+      r2BucketName,
+    });
     const buffer = await image.arrayBuffer();
 
     const items = await aiClient.digitizeMenu(buffer, image.type);
@@ -83,18 +94,22 @@ const translateSchema = z.object({
   sourceLang: z.string().optional().default("es"),
 });
 
-aiRoutes.post("/translate", zValidator("json", translateSchema), async (c) => {
-  const { text, sourceLang } = c.req.valid("json");
+aiRoutes.post("/translate", zValidator("json", translateSchema), async (c: Context<HonoEnv>) => {
+  const { text, sourceLang } = c.req.valid("json" as never) as any;
 
   const geminiKey = process.env["GEMINI_API_KEY"];
   const deeplKey = process.env["DEEPL_API_KEY"];
+  const r2AccountId = process.env["R2_ACCOUNT_ID"];
+  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
+  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
+  const r2BucketName = process.env["R2_BUCKET_NAME"];
 
-  if (!geminiKey || !deeplKey) {
+  if (!geminiKey || !deeplKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
     return c.json(
       {
         error: {
           code: "CONFIG_ERROR",
-          message: "Servicios de IA no configurados",
+          message: "Servicios de IA o Almacenamiento no configurados",
         },
       },
       500,
@@ -102,7 +117,14 @@ aiRoutes.post("/translate", zValidator("json", translateSchema), async (c) => {
   }
 
   try {
-    const aiClient = new AIClient(geminiKey, deeplKey);
+    const aiClient = new AIClient({
+      geminiApiKey: geminiKey,
+      deeplApiKey: deeplKey,
+      r2AccountId,
+      r2AccessKeyId,
+      r2SecretAccessKey,
+      r2BucketName,
+    });
     const translated = await aiClient.translateText(text, sourceLang);
 
     return c.json({ success: true, data: translated });
