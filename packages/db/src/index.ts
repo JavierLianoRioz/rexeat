@@ -1,4 +1,3 @@
-
 import {
   drizzle,
   type BetterSQLite3Database,
@@ -129,6 +128,8 @@ export class TenantRepository implements ITenantRepository {
         })
         .run();
     });
+  }
+
   async confirmAllergens(
     productId: string,
     allergens: AllergenMap,
