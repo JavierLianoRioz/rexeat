@@ -12,12 +12,14 @@
     "db:validate": "tsx src/validate-menu.ts",
     "seed": "tsx src/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "health-check": "tsx src/check-health.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
     "@rexeat/types": "workspace:*",
     "better-sqlite3": "^12.8.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
