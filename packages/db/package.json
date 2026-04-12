@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@rexeat/types": "workspace:*",
@@ -21,6 +22,7 @@
     "@faker-js/faker": "^10.4.0",
     "@types/better-sqlite3": "^7.6.13",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitest": "^3.0.7"
   }
 }

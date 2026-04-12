@@ -5,6 +5,7 @@ import {
   TranslatedStringSchema,
   OrganizationIdSchema,
   AllergenMapSchema,
+  FoodSafety,
 } from "./index";
 
 describe("Rexeat Core Logic (ADN)", () => {
@@ -52,6 +53,33 @@ describe("Rexeat Core Logic (ADN)", () => {
     it("should reject unknown allergens", () => {
       const invalidMap = { kruptonita: true };
       expect(AllergenMapSchema.safeParse(invalidMap).success).toBe(false);
+    });
+
+    it("should block products that are not manually confirmed", () => {
+      const product = { allergens: {}, allergensConfirmed: false };
+      const customer = { gluten: true };
+      expect(FoodSafety.isApto(product, customer)).toBe(false);
+    });
+
+    it("should allow a product without allergens if confirmed", () => {
+      const product = { allergens: {}, allergensConfirmed: true };
+      const customer = { gluten: true };
+      expect(FoodSafety.isApto(product, customer)).toBe(true);
+    });
+
+    it("should block a product if customer is intolerant to one of its allergens", () => {
+      const product = { allergens: { gluten: true }, allergensConfirmed: true };
+      const customer = { gluten: true };
+      expect(FoodSafety.isApto(product, customer)).toBe(false);
+    });
+
+    it("should allow product if allergens do not conflict with customer", () => {
+      const product = {
+        allergens: { lacteos: true },
+        allergensConfirmed: true,
+      };
+      const customer = { gluten: true };
+      expect(FoodSafety.isApto(product, customer)).toBe(true);
     });
   });
 });
