@@ -1,5 +1,5 @@
 {
-  "name": "@rexeat/api",
+  "name": "@rexeat/api-core",
   "version": "1.0.0",
   "private": true,
   "main": "./src/index.ts",
