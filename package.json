@@ -2,6 +2,7 @@
   "name": "rexeat",
   "private": true,
   "scripts": {
+    "penpot:share": "powershell -ExecutionPolicy Bypass -File ./infra/penpot/start-penpot.ps1",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
