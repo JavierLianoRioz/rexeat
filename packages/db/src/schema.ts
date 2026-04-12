@@ -5,7 +5,7 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import {
+export {
   type TranslatedString,
   type AllergenMap,
   type AvailabilityStatus,
@@ -111,3 +111,24 @@ export const productsToCategories = sqliteTable(
     pk: primaryKey({ columns: [t.productId, t.categoryId] }),
   }),
 );
+
+// --- Auditoría y Stock ---
+
+export const productStockLogs = sqliteTable("product_stock_logs", {
+  id: text("id").primaryKey(),
+  productId: text("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  oldStatus: text("old_status").$type<AvailabilityStatus>().notNull(),
+  newStatus: text("new_status").$type<AvailabilityStatus>().notNull(),
+  reason: text("reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ),
+});
