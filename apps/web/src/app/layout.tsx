@@ -48,7 +48,7 @@ export default function RootLayout({
                 </div>
               </Show>
               <Show when="signed-in">
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </Show>
             </nav>
           </header>
