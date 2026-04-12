@@ -39,3 +39,26 @@ export const AvailabilityStatusSchema = z.enum([
 ]);
 
 export type AvailabilityStatus = z.infer<typeof AvailabilityStatusSchema>;
+
+export const FoodSafety = {
+  /**
+   * Determina si un producto es apto para un cliente con ciertas intolerancias.
+   * Regla Legal: Si el producto no ha sido validado manualmente (allergensConfirmed),
+   * nunca se considera apto bajo filtros de seguridad.
+   */
+  isApto(
+    product: { allergens: AllergenMap; allergensConfirmed: boolean },
+    customerIntolerances: AllergenMap,
+  ): boolean {
+    if (!product.allergensConfirmed) return false;
+
+    // Un producto NO es apto si tiene algún alérgeno que el cliente no tolera
+    const hasConflict = Object.entries(customerIntolerances).some(
+      ([allergen, isIntolerant]) => {
+        return isIntolerant && product.allergens[allergen as Allergen];
+      },
+    );
+
+    return !hasConflict;
+  },
+};
