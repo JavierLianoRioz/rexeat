@@ -5,13 +5,22 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-export {
+import {
   type TranslatedString,
   type AllergenMap,
   type AvailabilityStatus,
   type UserRole,
   type ImageMetadata,
 } from "@rexeat/types";
+
+// Re-exportar para que estén disponibles en el namespace schema
+export type {
+  TranslatedString,
+  AllergenMap,
+  AvailabilityStatus,
+  UserRole,
+  ImageMetadata,
+};
 
 // --- Seguridad y Multi-inquilino ---
 
