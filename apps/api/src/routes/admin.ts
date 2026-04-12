@@ -11,8 +11,8 @@ export const adminStock = new Hono<HonoEnv>();
 adminStock.use("*", requireOrgAuth);
 
 const getContextOrThrow = (c: Context<HonoEnv>) => {
-  const orgId = c.get("orgId");
-  const userId = c.get("userId");
+  const orgId = c.get("orgId") as string;
+  const userId = c.get("userId") as string;
   if (!orgId || !userId) {
     throw new Error("Missing organization or user context");
   }
@@ -32,7 +32,7 @@ adminStock.patch(
   "/stock/:productId",
   zValidator("json", updateStockSchema),
   async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("productId");
+    const productId = c.req.param("productId") as string;
     const { status, reason } = c.req.valid("json" as never) as any;
 
     try {
@@ -65,7 +65,7 @@ adminStock.patch(
             message: message || "Error al actualizar el stock",
           },
         },
-        isNotFound ? 404 : 400,
+        (isNotFound ? 404 : 400) as any,
       );
     }
   },
@@ -95,7 +95,7 @@ adminStock.post(
         id: crypto.randomUUID(),
       } as any);
 
-      return c.json({ success: true, data: newProduct }, 201);
+      return c.json({ success: true, data: newProduct }, 201 as any);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error desconocido";
       return c.json(
@@ -105,7 +105,7 @@ adminStock.post(
             message: message || "No se pudo crear el producto",
           },
         },
-        400,
+        400 as any,
       );
     }
   },
@@ -115,7 +115,7 @@ adminStock.put(
   "/products/:id",
   zValidator("json", createProductSchema),
   async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("id");
+    const productId = c.req.param("id") as string;
     const newData = c.req.valid("json" as never) as any;
 
     try {
@@ -137,7 +137,7 @@ adminStock.put(
             message: message || "No se pudo actualizar el producto",
           },
         },
-        400,
+        400 as any,
       );
     }
   },

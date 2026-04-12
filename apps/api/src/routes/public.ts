@@ -21,23 +21,18 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
   const slug = c.req.param("slug");
 
   if (!slug) {
-    return c.json({ error: { code: "BAD_REQUEST", message: "Slug is required" } }, 400);
+    return c.json({ error: { code: "BAD_REQUEST", message: "Slug is required" } }, 400 as any);
   }
 
-  // 1. Resolver el Local y su Organización asociada
-  const result = await db
-    .select({
-      local: locals,
-      org: organizations,
-    })
+  // 1. Resolver el Local primero (sin join para evitar error de tipos en Edge)
+  const localsResult = await db
+    .select()
     .from(locals)
-    .innerJoin(organizations, eq(locals.organizationId, organizations.id))
-    .where(eq(locals.slug, slug))
-    .limit(1);
+    .where(eq(locals.slug, slug));
 
-  const data = result[0] as any;
+  const local = localsResult[0];
 
-  if (!data) {
+  if (!local) {
     return c.json(
       {
         error: {
@@ -45,13 +40,23 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
           message: "El menú solicitado no existe o el slug es inválido",
         },
       },
-      404,
+      404 as any,
     );
   }
 
-  const { local, org } = data;
+  // 2. Obtener la Organización
+  const orgsResult = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, local.organizationId));
+  
+  const org = orgsResult[0];
 
-  // 2. Obtener Categorías y Productos con aislamiento estricto por organizationId
+  if (!org) {
+    return c.json({ error: { code: "INTERNAL_ERROR", message: "Organization not found" } }, 500 as any);
+  }
+
+  // 3. Obtener Categorías y Productos con aislamiento estricto por organizationId
   const [allCategories, allProducts, allRelations] = await Promise.all([
     db
       .select()
@@ -62,7 +67,7 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     db.select().from(productsToCategories),
   ]);
 
-  // 3. Construir la jerarquía del menú
+  // 4. Construir la jerarquía del menú
   const menuCategories = allCategories.map((cat: Category) => {
     // Filtrar productos que pertenecen a esta categoría según la tabla pivot
     const categoryProductIds = allRelations
@@ -88,10 +93,10 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     };
   });
 
-  // 4. Configuración de caché según Menu_Publico.md
+  // 5. Configuración de caché según Menu_Publico.md
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=3600");
 
-  // 5. Estructura de respuesta final estandarizada
+  // 6. Estructura de respuesta final estandarizada
   return c.json({
     organization: {
       id: org.id,
