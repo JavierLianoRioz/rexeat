@@ -10,19 +10,19 @@ import { type AllergenMap } from "@rexeat/types";
 import * as schema from "./schema";
 
 // Función para inicializar la conexión según el entorno
-export const createDb = () => {
-  const url = process.env["DATABASE_URL"];
+export const createDb = (customUrl?: string) => {
+  const url = customUrl ?? process.env["DATABASE_URL"];
   const authToken = process.env["DATABASE_AUTH_TOKEN"];
 
-  if (url) {
+  if (url && url !== ":memory:") {
     const client = createClient({ url, authToken: authToken ?? "" });
     return drizzle(client, { schema });
   }
 
-  // Fallback para desarrollo local si no hay URL de Turso
+  // Fallback para desarrollo local o tests (:memory:)
   try {
     const BetterSQLite3 = require("better-sqlite3");
-    const sqlite = new BetterSQLite3("local.db");
+    const sqlite = new BetterSQLite3(url ?? "local.db");
     const { drizzle: drizzleSqlite } = require("drizzle-orm/better-sqlite3");
     return drizzleSqlite(sqlite, { schema });
   } catch (e) {

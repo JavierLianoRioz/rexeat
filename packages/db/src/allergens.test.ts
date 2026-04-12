@@ -8,7 +8,7 @@ describe("TenantRepository - Allergen Safety", () => {
   const ORG_B = "org_beta";
 
   beforeEach(async () => {
-    testDb = createDb();
+    testDb = createDb(":memory:");
 
     const tables = [
       `CREATE TABLE IF NOT EXISTS organizations (id TEXT PRIMARY KEY, business_name TEXT, created_at INTEGER)`,
