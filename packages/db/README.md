@@ -1,6 +1,6 @@
 # @rexeat/db
 
-Capa de persistencia y lógica de dominio de Rexeat. Basada en **Drizzle ORM** and **SQLite**.
+Capa de persistencia y lógica de dominio de Rexeat. Basada en **Drizzle ORM** y **SQLite**.
 
 ## 🚀 Uso del Repository
 
@@ -16,9 +16,21 @@ const products = await repo.getProducts();
 
 // Mutaciones seguras
 await repo.updateProductPrice("prod_abc", 1500); // 15.00€
-await repo.toggleProductStatus("prod_abc");
 await repo.confirmAllergens("prod_abc", { gluten: true }); // Validación humana obligatoria
-```
+
+
+### Gestión de Stock con Auditoría
+
+Para cambiar el estado de un producto manteniendo la trazabilidad, usa el método transaccional. Este método garantiza la **atomicidad** (cambio de stock y log en una sola operación) e **integridad** (validación de propiedad):
+
+```typescript
+await repo.updateProductStatusWithLog({
+    productId: "prod_abc",
+    userId: "user_789",
+    newStatus: "out_of_stock",
+    reason: "Rotura de stock tras servicio de comida",
+  });
+
 
 ## 🛡️ Seguridad Multi-Tenant
 
@@ -35,6 +47,7 @@ await repo.confirmAllergens("prod_abc", { gluten: true }); // Validación humana
 | Comando            | Descripción                                       |
 | ------------------ | ------------------------------------------------- |
 | `pnpm test`        | Ejecuta la suite de pruebas con Vitest.           |
+| `pnpm test:audit`  | Ejecuta los tests de auditoría (`tsx src/test-stock-audit.ts`). |
 | `pnpm db:generate` | Genera archivos de migración de Drizzle.          |
 | `pnpm db:push`     | Sincroniza el esquema con la base de datos local. |
 | `pnpm seed`        | Puebla la base de datos con datos realistas.      |

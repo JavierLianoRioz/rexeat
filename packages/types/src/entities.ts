@@ -41,3 +41,16 @@ export const MenuSchema = z.object({
 });
 
 export type Menu = z.infer<typeof MenuSchema>;
+
+export const ProductStockLogSchema = z.object({
+  id: z.uuid(),
+  productId: z.uuid(),
+  organizationId: OrganizationIdSchema,
+  userId: z.string(),
+  oldStatus: AvailabilityStatusSchema,
+  newStatus: AvailabilityStatusSchema,
+  reason: z.string().optional(),
+  createdAt: z.date(),
+});
+
+export type ProductStockLog = z.infer<typeof ProductStockLogSchema>;
