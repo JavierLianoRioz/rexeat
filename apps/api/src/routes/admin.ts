@@ -1,10 +1,10 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { createTenantRepository } from "@rexeat/db";
+import { createTenantRepository, type AvailabilityStatus } from "@rexeat/db";
 import { requireOrgAuth } from "../middleware/auth";
 import type { HonoEnv } from "../index";
-
+import { pusher } from "../lib/pusher";
 import { type OrganizationId } from "@rexeat/types";
 
 export const adminStock = new Hono<HonoEnv>();
@@ -23,12 +23,12 @@ const productSchema = z.object({
   description: z.record(z.string()).optional(),
   price: z.number().int().nonnegative(),
   allergens: z.record(z.boolean()),
-  status: z.enum(["in_stock", "out_of_stock"]),
+  status: z.enum(["in_stock", "out_of_stock", "hidden", "temporarily_unavailable"]),
   image: z.any().optional(),
 });
 
 const stockSchema = z.object({
-  status: z.enum(["in_stock", "out_of_stock"]),
+  status: z.enum(["in_stock", "out_of_stock", "hidden", "temporarily_unavailable"]),
   reason: z.string().optional(),
 });
 
@@ -40,8 +40,14 @@ adminStock.patch("/stock/:productId", zValidator("json", stockSchema), async (c)
   await createTenantRepository(orgId).updateProductStatusWithLog({
     productId,
     userId,
-    newStatus: status,
+    newStatus: status as AvailabilityStatus,
     reason,
+  });
+
+  await pusher.trigger(`public-org-${orgId}`, "STOCK_UPDATE", {
+    productId,
+    status,
+    organizationId: orgId,
   });
 
   return c.json({ success: true });

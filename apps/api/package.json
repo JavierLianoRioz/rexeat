@@ -18,11 +18,14 @@
     "@rexeat/types": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.7.4",
+    "pusher": "^5.3.3",
     "svix": "^1.90.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
   }

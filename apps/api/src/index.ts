@@ -7,6 +7,7 @@ import { publicMenu } from "./routes/public";
 import { adminStock } from "./routes/admin";
 import { aiRoutes } from "./routes/ai";
 import { webhooks } from "./routes/webhooks";
+import { pusherAuth } from "./routes/pusher";
 
 export type HonoEnv = {
   Variables: {
@@ -29,12 +30,13 @@ app.use("*", clerkMiddleware());
 app.route("/public", publicMenu);
 app.route("/admin", adminStock);
 app.route("/admin", aiRoutes);
+app.route("/pusher", pusherAuth);
 
 app.onError((err: Error, c: Context) => {
   // eslint-disable-next-line no-console
   console.error(`${err.name}: ${err.message}`);
 
-  const status = "status" in err ? (err as any).status : 500;
+  const status = "status" in err ? (err.status as number) : 500;
 
   return c.json(
     {
@@ -52,7 +54,7 @@ app.onError((err: Error, c: Context) => {
           process.env["NODE_ENV"] === "development" ? { stack: err.stack } : {},
       },
     },
-    status as any,
+    (status >= 400 && status < 600 ? status : 500) as 500,
   );
 });
 
