@@ -1,13 +1,12 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { AIClient } from "../lib/ai";
+import { getAIClient } from "../lib/ai";
 import { requireOrgAuth } from "../middleware/auth";
 import type { HonoEnv } from "../index";
 
 export const aiRoutes = new Hono<HonoEnv>();
 
-// Todas las rutas de IA requieren autenticación de organización
 aiRoutes.use("*", requireOrgAuth);
 
 /**
@@ -16,59 +15,26 @@ aiRoutes.use("*", requireOrgAuth);
  */
 aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
   const formData = await c.req.formData();
-  const image = formData.get("image") as File;
+  const image = formData.get("image") as File | null;
 
   if (!image) {
     return c.json(
-      {
-        error: {
-          code: "BAD_REQUEST",
-          message: "No se ha subido ninguna imagen",
-        },
-      },
+      { error: { code: "BAD_REQUEST", message: "No se ha subido imagen" } },
       400,
     );
   }
 
-  const geminiKey = process.env["GEMINI_API_KEY"];
-  const deeplKey = process.env["DEEPL_API_KEY"];
-  const r2AccountId = process.env["R2_ACCOUNT_ID"];
-  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
-  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
-  const r2BucketName = process.env["R2_BUCKET_NAME"];
-
-  if (!geminiKey || !deeplKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
-    return c.json(
-      {
-        error: {
-          code: "CONFIG_ERROR",
-          message: "Servicios de IA o Almacenamiento no configurados",
-        },
-      },
-      500,
-    );
-  }
-
   try {
-    const aiClient = new AIClient({
-      geminiApiKey: geminiKey,
-      deeplApiKey: deeplKey,
-      r2AccountId,
-      r2AccessKeyId,
-      r2SecretAccessKey,
-      r2BucketName,
-    });
+    const aiClient = getAIClient();
     const buffer = await image.arrayBuffer();
-
     const items = await aiClient.digitizeMenu(buffer, image.type);
 
     return c.json({
       success: true,
       data: {
         items,
-        allergens_confirmed: false, // Regla crítica: siempre falso tras digitalización
-        message:
-          "Digitalización completada. Por favor, revisa los nombres y precios.",
+        allergens_confirmed: false,
+        message: "Digitalización completada.",
       },
     });
   } catch (err: unknown) {
@@ -77,7 +43,7 @@ aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
       {
         error: {
           code: "AI_ERROR",
-          message: message || "Error al procesar la imagen con Gemini",
+          message,
         },
       },
       500,
@@ -94,50 +60,28 @@ const translateSchema = z.object({
   sourceLang: z.string().optional().default("es"),
 });
 
-aiRoutes.post("/translate", zValidator("json", translateSchema), async (c: Context<HonoEnv>) => {
-  const { text, sourceLang } = c.req.valid("json" as never) as any;
+aiRoutes.post(
+  "/translate",
+  zValidator("json", translateSchema),
+  async (c: Context<HonoEnv>) => {
+    const { text, sourceLang } = c.req.valid("json");
 
-  const geminiKey = process.env["GEMINI_API_KEY"];
-  const deeplKey = process.env["DEEPL_API_KEY"];
-  const r2AccountId = process.env["R2_ACCOUNT_ID"];
-  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
-  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
-  const r2BucketName = process.env["R2_BUCKET_NAME"];
-
-  if (!geminiKey || !deeplKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
-    return c.json(
-      {
-        error: {
-          code: "CONFIG_ERROR",
-          message: "Servicios de IA o Almacenamiento no configurados",
+    try {
+      const aiClient = getAIClient();
+      const translated = await aiClient.translateText(text, sourceLang);
+      return c.json({ success: true, data: translated });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Error de traducción";
+      return c.json(
+        {
+          error: {
+            code: "AI_ERROR",
+            message,
+          },
         },
-      },
-      500,
-    );
-  }
-
-  try {
-    const aiClient = new AIClient({
-      geminiApiKey: geminiKey,
-      deeplApiKey: deeplKey,
-      r2AccountId,
-      r2AccessKeyId,
-      r2SecretAccessKey,
-      r2BucketName,
-    });
-    const translated = await aiClient.translateText(text, sourceLang);
-
-    return c.json({ success: true, data: translated });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Error de traducción";
-    return c.json(
-      {
-        error: {
-          code: "AI_ERROR",
-          message: message || "Error al traducir con DeepL",
-        },
-      },
-      500,
-    );
-  }
-});
+        500,
+      );
+    }
+  },
+);

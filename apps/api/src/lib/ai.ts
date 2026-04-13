@@ -178,3 +178,32 @@ export class AIClient {
     return data.translations[0]?.text || "";
   }
 }
+
+interface AIClientConfig {
+  geminiApiKey: string;
+  deeplApiKey: string;
+  r2AccountId: string;
+  r2AccessKeyId: string;
+  r2SecretAccessKey: string;
+  r2BucketName: string;
+}
+
+/**
+ * Factory para obtener una instancia configurada de AIClient.
+ */
+export function getAIClient() {
+  const config = {
+    geminiApiKey: process.env["GEMINI_API_KEY"],
+    deeplApiKey: process.env["DEEPL_API_KEY"],
+    r2AccountId: process.env["R2_ACCOUNT_ID"],
+    r2AccessKeyId: process.env["R2_ACCESS_KEY_ID"],
+    r2SecretAccessKey: process.env["R2_SECRET_ACCESS_KEY"],
+    r2BucketName: process.env["R2_BUCKET_NAME"],
+  };
+
+  if (Object.values(config).some((v) => !v)) {
+    throw new Error("Servicios de IA o Almacenamiento no configurados");
+  }
+
+  return new AIClient(config as AIClientConfig);
+}
