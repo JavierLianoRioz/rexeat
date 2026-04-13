@@ -5,140 +5,77 @@ import { createTenantRepository } from "@rexeat/db";
 import { requireOrgAuth } from "../middleware/auth";
 import type { HonoEnv } from "../index";
 
+import { type OrganizationId } from "@rexeat/types";
+
 export const adminStock = new Hono<HonoEnv>();
 
-// Middleware de seguridad para todas las rutas de admin
 adminStock.use("*", requireOrgAuth);
 
 const getContextOrThrow = (c: Context<HonoEnv>) => {
-  const orgId = c.get("orgId") as string;
+  const orgId = c.get("orgId") as OrganizationId;
   const userId = c.get("userId") as string;
-  if (!orgId || !userId) {
-    throw new Error("Missing organization or user context");
-  }
+  if (!orgId || !userId) throw new Error("Missing context");
   return { orgId, userId };
 };
 
-// Esquema de validación para el cambio de stock
-const updateStockSchema = z.object({
-  status: z.any(),
-  reason: z.string().optional(),
-});
-
-/**
- * PATCH /api/admin/stock/:productId
- */
-adminStock.patch(
-  "/stock/:productId",
-  zValidator("json", updateStockSchema),
-  async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("productId") as string;
-    const { status, reason } = c.req.valid("json" as never) as any;
-
-    try {
-      const { orgId, userId } = getContextOrThrow(c);
-      const repo = createTenantRepository(orgId);
-
-      await repo.updateProductStatusWithLog({
-        productId,
-        userId,
-        newStatus: status,
-        reason,
-      });
-
-      return c.json({
-        success: true,
-        data: {
-          productId,
-          newStatus: status,
-          updatedAt: new Date().toISOString(),
-        },
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error desconocido";
-      const isNotFound = message.includes("not found");
-
-      return c.json(
-        {
-          error: {
-            code: isNotFound ? "NOT_FOUND" : "UPDATE_FAILED",
-            message: message || "Error al actualizar el stock",
-          },
-        },
-        (isNotFound ? 404 : 400) as any,
-      );
-    }
-  },
-);
-
-const createProductSchema = z.object({
-  name: z.any(),
-  description: z.any(),
+const productSchema = z.object({
+  name: z.record(z.string()),
+  description: z.record(z.string()).optional(),
   price: z.number().int().nonnegative(),
-  allergens: z.any(),
-  status: z.any(),
+  allergens: z.record(z.boolean()),
+  status: z.enum(["in_stock", "out_of_stock"]),
   image: z.any().optional(),
 });
 
-adminStock.post(
-  "/products",
-  zValidator("json", createProductSchema),
-  async (c: Context<HonoEnv>) => {
-    const data = c.req.valid("json" as never) as any;
+const stockSchema = z.object({
+  status: z.enum(["in_stock", "out_of_stock"]),
+  reason: z.string().optional(),
+});
 
-    try {
-      const { orgId } = getContextOrThrow(c);
-      const repo = createTenantRepository(orgId);
+adminStock.patch("/stock/:productId", zValidator("json", stockSchema), async (c) => {
+  const productId = c.req.param("productId");
+  const { status, reason } = c.req.valid("json" as never);
+  const { orgId, userId } = getContextOrThrow(c);
+  
+  await createTenantRepository(orgId).updateProductStatusWithLog({
+    productId,
+    userId,
+    newStatus: status,
+    reason,
+  });
 
-      const newProduct = await repo.createProduct({
-        ...data,
-        id: crypto.randomUUID(),
-      } as any);
+  return c.json({ success: true });
+});
 
-      return c.json({ success: true, data: newProduct }, 201 as any);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error desconocido";
-      return c.json(
-        {
-          error: {
-            code: "CREATE_FAILED",
-            message: message || "No se pudo crear el producto",
-          },
-        },
-        400 as any,
-      );
-    }
-  },
-);
+adminStock.post("/products", zValidator("json", productSchema), async (c) => {
+  const data = c.req.valid("json" as never);
+  const { orgId } = getContextOrThrow(c);
 
-adminStock.put(
-  "/products/:id",
-  zValidator("json", createProductSchema),
-  async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("id") as string;
-    const newData = c.req.valid("json" as never) as any;
+  const product = await createTenantRepository(orgId).createProduct({
+    ...data,
+    id: crypto.randomUUID(),
+  } as any);
 
-    try {
-      const { orgId } = getContextOrThrow(c);
-      const repo = createTenantRepository(orgId);
+  return c.json({ success: true, data: product }, 201);
+});
 
-      const updatedProduct = await repo.confirmAllergens(
-        productId,
-        newData.allergens,
-      );
+adminStock.put("/products/:id", zValidator("json", productSchema), async (c) => {
+  const productId = c.req.param("id");
+  const data = c.req.valid("json" as never);
+  const { orgId } = getContextOrThrow(c);
 
-      return c.json({ success: true, data: updatedProduct });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error desconocido";
-      return c.json(
-        {
-          error: {
-            code: "UPDATE_FAILED",
-            message: message || "No se pudo actualizar el producto",
-          },
-        },
-        400 as any,
-      );
-    }
-  },
-);
+  const product = await createTenantRepository(orgId).updateProduct(productId, {
+    ...data,
+    allergensConfirmed: true,
+  } as any);
+
+  return c.json({ success: true, data: product });
+});
+
+adminStock.delete("/products/:id", async (c) => {
+  const productId = c.req.param("id");
+  const { orgId } = getContextOrThrow(c);
+
+  await createTenantRepository(orgId).deleteProduct(productId);
+  return c.json({ success: true });
+});

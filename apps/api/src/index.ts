@@ -6,8 +6,8 @@ import { clerkMiddleware } from "@hono/clerk-auth";
 import { publicMenu } from "./routes/public";
 import { adminStock } from "./routes/admin";
 import { aiRoutes } from "./routes/ai";
+import { webhooks } from "./routes/webhooks";
 
-// Tipado del contexto de Hono para el proyecto Rexeat
 export type HonoEnv = {
   Variables: {
     orgId: string;
@@ -18,25 +18,24 @@ export type HonoEnv = {
 
 const app = new Hono<HonoEnv>().basePath("/api");
 
-// Middleware globales
 app.use("*", logger());
 app.use("*", prettyJSON());
 app.use("*", cors());
+
+app.route("/webhooks", webhooks);
+
 app.use("*", clerkMiddleware());
 
-// Rutas
 app.route("/public", publicMenu);
 app.route("/admin", adminStock);
 app.route("/admin", aiRoutes);
 
-// Manejo de errores estándar según README.md
 app.onError((err: Error, c: Context) => {
   // eslint-disable-next-line no-console
   console.error(`${err.name}: ${err.message}`);
 
   const status = "status" in err ? (err as any).status : 500;
 
-  // Formato estandarizado de error de Rexeat
   return c.json(
     {
       error: {
