@@ -26,8 +26,9 @@ aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
 
   try {
     const aiClient = getAIClient();
+    const orgId = c.get("orgId");
     const buffer = await image.arrayBuffer();
-    const items = await aiClient.digitizeMenu(buffer, image.type);
+    const items = await aiClient.digitizeMenu(buffer, image.type, orgId);
 
     return c.json({
       success: true,

@@ -57,10 +57,11 @@ export class AIClient {
   async digitizeMenu(
     imageBuffer: ArrayBuffer,
     mimeType: string,
+    organizationId: string,
   ): Promise<DigitizationItem[]> {
     const requestId = crypto.randomUUID();
     const fileExtension = mimeType.split("/")[1] || "jpg";
-    const fileName = `uploads/${requestId}.${fileExtension}`;
+    const fileName = `${organizationId}/uploads/${requestId}.${fileExtension}`;
 
     // 1. Persistencia en R2 (Auditoría y almacenamiento)
     await this.s3Client.send(
