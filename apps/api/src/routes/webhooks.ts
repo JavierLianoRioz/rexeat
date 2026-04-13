@@ -6,17 +6,35 @@ import { type UserRole, type OrganizationId } from "@rexeat/types";
 
 const webhooks = new Hono();
 
-export async function processClerkEvent(type: string, data: {
-  id?: string;
-  name?: string;
-  organization?: { id: string };
-  public_user_data?: { user_id: string };
-  role?: string;
-}) {
+const ROLE_MAP: Record<string, UserRole> = {
+  "org:admin": "owner",
+  "org:manager": "manager",
+  "org:member": "waiter",
+};
+
+function mapClerkRole(clerkRole: string): UserRole {
+  return ROLE_MAP[clerkRole] || "waiter";
+}
+
+interface ClerkEvent {
+  type: string;
+  data: {
+    id?: string;
+    name?: string;
+    organization?: { id: string };
+    public_user_data?: { user_id: string };
+    role?: string;
+  };
+}
+
+export async function processClerkEvent(evt: ClerkEvent) {
+  const { type, data } = evt;
+
   switch (type) {
     case "organization.created": {
       const { id, name } = data;
       if (!id || !name) return;
+
       await db
         .insert(organizations)
         .values({ id, businessName: name })
@@ -30,6 +48,7 @@ export async function processClerkEvent(type: string, data: {
     case "organization.updated": {
       const { id, name } = data;
       if (!id || !name) return;
+
       await db
         .update(organizations)
         .set({ businessName: name })
@@ -47,14 +66,8 @@ export async function processClerkEvent(type: string, data: {
     case "organizationMembership.updated": {
       const { organization, public_user_data, role } = data;
       if (!organization || !public_user_data || !role) return;
-      const clerkRole = role.toLowerCase();
 
-      let rexeatRole: UserRole = "waiter";
-      if (clerkRole.includes("admin") || clerkRole.includes("owner")) {
-        rexeatRole = "owner";
-      } else if (clerkRole.includes("manager")) {
-        rexeatRole = "manager";
-      }
+      const rexeatRole = mapClerkRole(role);
 
       await db
         .insert(users)
@@ -101,11 +114,11 @@ webhooks.post("/clerk", async (c) => {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
-    }) as { type: string; data: any };
+    }) as ClerkEvent;
 
-    await processClerkEvent(evt.type, evt.data);
+    await processClerkEvent(evt);
     return c.json({ success: true });
-  } catch (_err) {
+  } catch {
     return c.json({ error: "Verification failed" }, 400);
   }
 });
