@@ -28,6 +28,14 @@ const ALLERGENS: Allergen[] = [
   "moluscos",
 ];
 
+function createAllergenMap(active: Partial<Record<Allergen, boolean>> = {}) {
+  const map: Record<string, boolean> = {};
+  ALLERGENS.forEach((a) => {
+    map[a] = active[a] || false;
+  });
+  return map;
+}
+
 const CONFIG = {
   RESTAURANTS: 3,
   CATEGORIES_PER_LOCAL: 10,
@@ -131,13 +139,13 @@ const CANTABRIAN_DISHES = [
       fr: "Calmars frais panés et frits, un classique de la baie.",
     },
     price: 1450,
-    allergens: { gluten: true, moluscos: true },
+    allergens: createAllergenMap({ gluten: true, moluscos: true }),
   },
   {
     name: {
       es: "Cocido Montañés",
       en: "Cantabrian Mountain Stew",
-      fr: "Ragoût de montagne cantabre",
+      fr: "Ragoût de montaña cantabre",
     },
     desc: {
       es: "Guiso tradicional de alubia blanca, berza y compango de la matanza.",
@@ -145,7 +153,7 @@ const CANTABRIAN_DISHES = [
       fr: "Ragoût traditionnel de haricots blancs, chou et viandes de porc locales.",
     },
     price: 1600,
-    allergens: {},
+    allergens: createAllergenMap({}),
   },
   {
     name: {
@@ -159,7 +167,7 @@ const CANTABRIAN_DISHES = [
       fr: "Anchois de première qualité préparés à la main dans l'huile d'olive.",
     },
     price: 2200,
-    allergens: { pescado: true },
+    allergens: createAllergenMap({ pescado: true }),
   },
   {
     name: {
@@ -173,7 +181,7 @@ const CANTABRIAN_DISHES = [
       fr: "Palourdes de Pedreña cuites dans une sauce au vin blanco y à l'ail.",
     },
     price: 2400,
-    allergens: { moluscos: true, gluten: true },
+    allergens: createAllergenMap({ moluscos: true, gluten: true }),
   },
   {
     name: {
@@ -187,7 +195,7 @@ const CANTABRIAN_DISHES = [
       fr: "Ragoût de marin au thon du Nord, pommes de terre et poivrons.",
     },
     price: 1850,
-    allergens: { pescado: true },
+    allergens: createAllergenMap({ pescado: true }),
   },
   {
     name: {
@@ -201,7 +209,7 @@ const CANTABRIAN_DISHES = [
       fr: "Dessert typique des vallées de Pasiego à base de lait de vache caillé.",
     },
     price: 650,
-    allergens: { lacteos: true, huevos: true, gluten: true },
+    allergens: createAllergenMap({ lacteos: true, huevos: true, gluten: true }),
   },
 ];
 
@@ -276,11 +284,11 @@ async function createProducts(orgId: string, categoryIds: string[]) {
     const enDishName = fakerEN.food.dish();
     const enDescription = fakerEN.food.description();
 
-    const allergens: Record<string, boolean> = {};
+    const activeAllergens: Partial<Record<Allergen, boolean>> = {};
     faker.helpers
       .arrayElements(ALLERGENS, faker.number.int({ min: 0, max: 3 }))
       .forEach((a) => {
-        allergens[a] = true;
+        activeAllergens[a] = true;
       });
 
     await db.insert(products).values({
@@ -291,7 +299,8 @@ async function createProducts(orgId: string, categoryIds: string[]) {
       price: Money.fromFloat(
         faker.number.float({ min: 5, max: 45, fractionDigits: 2 }),
       ),
-      allergens,
+      allergens: createAllergenMap(activeAllergens),
+      allergensConfirmed: true,
       status: "in_stock",
       image: getRandomImage(800, 600),
     });
@@ -383,6 +392,7 @@ async function seedCantabrianRestaurant() {
       description: dish.desc,
       price: dish.price,
       allergens: dish.allergens,
+      allergensConfirmed: true,
       status: "in_stock",
       image: getRandomImage(800, 600),
     });
