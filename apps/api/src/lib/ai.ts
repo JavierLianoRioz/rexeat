@@ -34,13 +34,13 @@ export class AIClient {
       r2AccessKeyId: string;
       r2SecretAccessKey: string;
       r2BucketName: string;
-    }
+    },
   ) {
     this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
     this.geminiModel = this.genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
     });
-    
+
     this.s3Client = new S3Client({
       region: "auto",
       endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
@@ -69,7 +69,7 @@ export class AIClient {
         Key: fileName,
         Body: new Uint8Array(imageBuffer),
         ContentType: mimeType,
-      })
+      }),
     );
 
     // 2. Procesamiento con Gemini
@@ -130,22 +130,29 @@ export class AIClient {
     _sourceLang: string = "es",
   ): Promise<TranslatedString> {
     const targetLangs = ["en", "fr", "de", "nl", "it"] as const;
-    const result: Partial<TranslatedString> = { es: text };
+    const result: TranslatedString = {
+      es: text,
+      en: "",
+      fr: "",
+      de: "",
+      nl: "",
+      it: "",
+    };
 
     await Promise.all(
       targetLangs.map(async (lang) => {
         try {
           const translated = await this.callDeepL(text, lang.toUpperCase());
-          (result as any)[lang] = translated; // eslint-disable-line @typescript-eslint/no-explicit-any
+          result[lang] = translated;
         } catch (e) {
           // eslint-disable-next-line no-console
           console.warn(`Error DeepL (${lang}):`, e);
-          (result as any)[lang] = ""; // eslint-disable-line @typescript-eslint/no-explicit-any
+          result[lang] = "";
         }
       }),
     );
 
-    return result as TranslatedString;
+    return result;
   }
 
   private async callDeepL(text: string, targetLang: string): Promise<string> {
