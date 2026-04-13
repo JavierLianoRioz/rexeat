@@ -16,16 +16,12 @@ pusherAuth.post(
   "/auth",
   zValidator("form", pusherAuthSchema),
   async (c: Context<HonoEnv>) => {
-    const { socket_id, channel_name } = c.req.valid("form");
+    const { socket_id, channel_name } = await c.req.parseBody() as { socket_id: string, channel_name: string };
     const auth = getAuth(c);
 
     if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
 
-    // Validar acceso al canal private-org-{orgId}
-    // const channelId = channel_name.replace("private-org-", "");
-
     // TODO: Validar membresía real en la tabla de miembros
-
     const authResponse = pusher.authenticate(socket_id, channel_name, {
       user_id: auth.userId,
     });
