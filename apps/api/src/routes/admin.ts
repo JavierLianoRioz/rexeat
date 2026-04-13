@@ -34,7 +34,7 @@ const stockSchema = z.object({
 
 adminStock.patch("/stock/:productId", zValidator("json", stockSchema), async (c) => {
   const productId = c.req.param("productId");
-  const { status, reason } = c.req.valid("json" as never);
+  const { status, reason } = c.req.valid("json" as never) as any;
   const { orgId, userId } = getContextOrThrow(c);
   
   await createTenantRepository(orgId).updateProductStatusWithLog({
@@ -48,7 +48,7 @@ adminStock.patch("/stock/:productId", zValidator("json", stockSchema), async (c)
 });
 
 adminStock.post("/products", zValidator("json", productSchema), async (c) => {
-  const data = c.req.valid("json" as never);
+  const data = c.req.valid("json" as never) as any;
   const { orgId } = getContextOrThrow(c);
 
   const product = await createTenantRepository(orgId).createProduct({
@@ -61,7 +61,7 @@ adminStock.post("/products", zValidator("json", productSchema), async (c) => {
 
 adminStock.put("/products/:id", zValidator("json", productSchema), async (c) => {
   const productId = c.req.param("id");
-  const data = c.req.valid("json" as never);
+  const data = c.req.valid("json" as never) as any;
   const { orgId } = getContextOrThrow(c);
 
   const product = await createTenantRepository(orgId).updateProduct(productId, {

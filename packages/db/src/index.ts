@@ -187,7 +187,7 @@ export class TenantRepository implements ITenantRepository {
     return results[0] ?? null;
   }
 
-  private async fetchProduct(tx: AppDatabase, productId: string): Promise<Product> {
+  private async fetchProduct(tx: any, productId: string): Promise<Product> {
     const results = await tx
       .select()
       .from(schema.products)

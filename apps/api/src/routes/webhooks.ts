@@ -101,7 +101,7 @@ webhooks.post("/clerk", async (c) => {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
-    }) as { type: string, data: any };
+    }) as { type: string; data: any };
 
     await processClerkEvent(evt.type, evt.data);
     return c.json({ success: true });
