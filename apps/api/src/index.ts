@@ -21,7 +21,18 @@ const app = new Hono<HonoEnv>().basePath("/api");
 
 app.use("*", logger());
 app.use("*", prettyJSON());
-app.use("*", cors());
+
+app.use("*", async (c, next) => {
+  const allowedOrigins = process.env["ALLOWED_ORIGINS"]?.split(",") || [];
+  const corsMiddleware = cors({
+    origin: (origin) => {
+      if (process.env["NODE_ENV"] === "development") return "*";
+      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || "";
+    },
+    credentials: true,
+  });
+  return corsMiddleware(c, next);
+});
 
 app.route("/webhooks", webhooks);
 
