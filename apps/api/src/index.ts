@@ -6,6 +6,7 @@ import { clerkMiddleware } from "@hono/clerk-auth";
 import { publicMenu } from "./routes/public";
 import { adminStock } from "./routes/admin";
 import { aiRoutes } from "./routes/ai";
+import { pusherAuth } from "./routes/pusher";
 
 // Tipado del contexto de Hono para el proyecto Rexeat
 export type HonoEnv = {
@@ -28,13 +29,14 @@ app.use("*", clerkMiddleware());
 app.route("/public", publicMenu);
 app.route("/admin", adminStock);
 app.route("/admin", aiRoutes);
+app.route("/pusher", pusherAuth);
 
 // Manejo de errores estándar según README.md
 app.onError((err: Error, c: Context) => {
   // eslint-disable-next-line no-console
   console.error(`${err.name}: ${err.message}`);
 
-  const status = "status" in err ? (err as any).status : 500;
+  const status = "status" in err ? (err.status as number) : 500;
 
   // Formato estandarizado de error de Rexeat
   return c.json(
@@ -53,7 +55,7 @@ app.onError((err: Error, c: Context) => {
           process.env["NODE_ENV"] === "development" ? { stack: err.stack } : {},
       },
     },
-    status as any,
+    (status >= 400 && status < 600 ? status : 500) as 500,
   );
 });
 
