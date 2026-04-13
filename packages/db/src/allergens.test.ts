@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { sql } from "drizzle-orm";
-import { createDb, TenantRepository, organizations, products } from "./index";
+import {
+  createDb,
+  TenantRepository,
+  organizations,
+  products,
+  type AppDatabase,
+} from "./index";
 
 describe("TenantRepository - Allergen Safety", () => {
-  let testDb: any;
+  let testDb: AppDatabase;
   const ORG_A = "org_alfa";
   const ORG_B = "org_beta";
 
@@ -61,7 +67,7 @@ describe("TenantRepository - Allergen Safety", () => {
 
       await expect(
         repoA.confirmAllergens(prodIdB, { gluten: true }),
-      ).rejects.toThrow("Product not found");
+      ).rejects.toThrow(/Unauthorized or Not Found/);
     });
   });
 });

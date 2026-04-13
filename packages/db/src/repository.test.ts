@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { sql, eq } from "drizzle-orm";
-import { createDb, TenantRepository, organizations, products } from "./index";
+import {
+  createDb,
+  TenantRepository,
+  organizations,
+  products,
+  type AppDatabase,
+} from "./index";
 import { type OrganizationId } from "@rexeat/types";
 
 describe("TenantRepository - Aislamiento y Actualización", () => {
-  let testDb: any;
+  let testDb: AppDatabase;
   const ORG_A = "org_test_a" as OrganizationId;
   const ORG_B = "org_test_b" as OrganizationId;
   const PROD_ID = "prod_test_1";
@@ -51,14 +57,17 @@ describe("TenantRepository - Aislamiento y Actualización", () => {
 
   it("GREEN: NO debe permitir actualizar un producto de otra organización", async () => {
     const repoB = new TenantRepository(ORG_B, testDb);
-    
+
     // El repoB intenta actualizar el producto que pertenece a Org A
-    await expect(
-      repoB.updateProduct(PROD_ID, { price: 9999 })
-    ).rejects.toThrow(/Product not found or unauthorized/);
+    await expect(repoB.updateProduct(PROD_ID, { price: 9999 })).rejects.toThrow(
+      /Unauthorized or Not Found/,
+    );
 
     // Verificar que el precio NO cambió en la DB
-    const [p] = await testDb.select().from(products).where(eq(products.id, PROD_ID));
+    const [p] = await testDb
+      .select()
+      .from(products)
+      .where(eq(products.id, PROD_ID));
     expect(p?.price).toBe(1000);
   });
 
@@ -66,18 +75,24 @@ describe("TenantRepository - Aislamiento y Actualización", () => {
     const repoA = new TenantRepository(ORG_A, testDb);
     await repoA.deleteProduct(PROD_ID);
 
-    const [p] = await testDb.select().from(products).where(eq(products.id, PROD_ID));
+    const [p] = await testDb
+      .select()
+      .from(products)
+      .where(eq(products.id, PROD_ID));
     expect(p).toBeUndefined();
   });
 
   it("RED: NO debe permitir eliminar un producto de otra organización", async () => {
     const repoB = new TenantRepository(ORG_B, testDb);
-    
-    await expect(
-      repoB.deleteProduct(PROD_ID)
-    ).rejects.toThrow(/Product not found or unauthorized/);
 
-    const [p] = await testDb.select().from(products).where(eq(products.id, PROD_ID));
+    await expect(repoB.deleteProduct(PROD_ID)).rejects.toThrow(
+      /Unauthorized or Not Found/,
+    );
+
+    const [p] = await testDb
+      .select()
+      .from(products)
+      .where(eq(products.id, PROD_ID));
     expect(p).toBeDefined();
   });
 });

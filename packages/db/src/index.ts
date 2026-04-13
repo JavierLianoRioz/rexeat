@@ -217,14 +217,16 @@ export class TenantRepository implements ITenantRepository {
   }
 
   async getFullMenu(): Promise<unknown[]> {
-    const client = this.database as LibSQLDatabase<typeof schema>;
-    return client.query.categories.findMany({
+    const db = this.database as LibSQLDatabase<typeof schema>;
+    return db.query.categories.findMany({
       where: eq(schema.categories.organizationId, this.organizationId),
       orderBy: schema.categories.order,
       with: {
         productsToCategories: {
           with: {
-            product: true,
+            product: {
+              where: eq(schema.products.organizationId, this.organizationId),
+            },
           },
         },
       },

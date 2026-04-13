@@ -74,14 +74,16 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     id: cat.id,
     name: cat.name,
     order: cat.order,
-    products: cat.productsToCategories.map((rel) => ({
-      id: rel.product.id,
-      name: rel.product.name,
-      price: rel.product.price,
-      allergens: rel.product.allergens,
-      stock_status: rel.product.status,
-      image: rel.product.image,
-    })),
+    products: cat.productsToCategories
+      .filter((rel) => rel.product !== null)
+      .map((rel) => ({
+        id: rel.product.id,
+        name: rel.product.name,
+        price: rel.product.price,
+        allergens: rel.product.allergens,
+        stock_status: rel.product.status,
+        image: rel.product.image,
+      })),
   }));
 
   // 5. Configuración de caché según Menu_Publico.md
