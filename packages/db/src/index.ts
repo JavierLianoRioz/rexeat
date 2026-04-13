@@ -1,5 +1,11 @@
-import { drizzle as drizzleLibsql, type LibSQLDatabase } from "drizzle-orm/libsql";
-import { drizzle as drizzleBetterSqlite, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import {
+  drizzle as drizzleLibsql,
+  type LibSQLDatabase,
+} from "drizzle-orm/libsql";
+import {
+  drizzle as drizzleBetterSqlite,
+  type BetterSQLite3Database,
+} from "drizzle-orm/better-sqlite3";
 import { createClient } from "@libsql/client";
 import {
   eq,
@@ -12,7 +18,9 @@ import * as schema from "./schema";
 
 import BetterSQLite3 from "better-sqlite3";
 
-export type AppDatabase = LibSQLDatabase<typeof schema> | BetterSQLite3Database<typeof schema>;
+export type AppDatabase =
+  | LibSQLDatabase<typeof schema>
+  | BetterSQLite3Database<typeof schema>;
 
 export const createDb = (customUrl?: string): AppDatabase => {
   const url = customUrl ?? process.env["DATABASE_URL"];
@@ -26,15 +34,20 @@ export const createDb = (customUrl?: string): AppDatabase => {
   try {
     const sqlite = new BetterSQLite3(url ?? "local.db");
     return drizzleBetterSqlite(sqlite, { schema });
-  } catch (_error) {
-    throw new Error("Failed to initialize database connection.");
+  } catch (error) {
+    throw new Error("Failed to initialize database connection.", {
+      cause: error,
+    });
   }
 };
 
 export const db = createDb();
 
 export type Product = InferSelectModel<typeof schema.products>;
-export type NewProduct = Omit<InferInsertModel<typeof schema.products>, "organizationId">;
+export type NewProduct = Omit<
+  InferInsertModel<typeof schema.products>,
+  "organizationId"
+>;
 export type Category = InferSelectModel<typeof schema.categories>;
 export type Local = InferSelectModel<typeof schema.locals>;
 export type Organization = InferSelectModel<typeof schema.organizations>;
@@ -43,7 +56,10 @@ export type ProductStockLog = InferSelectModel<typeof schema.productStockLogs>;
 export interface ITenantRepository {
   getProducts(): Promise<Product[]>;
   createProduct(data: NewProduct): Promise<Product>;
-  updateProduct(productId: string, data: Partial<NewProduct> & { allergensConfirmed?: boolean }): Promise<Product>;
+  updateProduct(
+    productId: string,
+    data: Partial<NewProduct> & { allergensConfirmed?: boolean },
+  ): Promise<Product>;
   deleteProduct(productId: string): Promise<void>;
   updateProductStatusWithLog(params: {
     productId: string;
@@ -55,6 +71,7 @@ export interface ITenantRepository {
   getCategories(): Promise<Category[]>;
   getLocals(): Promise<Local[]>;
   getInfo(): Promise<Organization | null>;
+  getFullMenu(): Promise<unknown[]>;
 }
 
 export class TenantRepository implements ITenantRepository {
@@ -79,10 +96,16 @@ export class TenantRepository implements ITenantRepository {
       } as InferInsertModel<typeof schema.products>)
       .returning();
 
-    return this.validateResult(results[0], `create product in ${this.organizationId}`);
+    return this.validateResult(
+      results[0],
+      `create product in ${this.organizationId}`,
+    );
   }
 
-  async updateProduct(productId: string, data: Partial<NewProduct> & { allergensConfirmed?: boolean }): Promise<Product> {
+  async updateProduct(
+    productId: string,
+    data: Partial<NewProduct> & { allergensConfirmed?: boolean },
+  ): Promise<Product> {
     const results = await this.database
       .update(schema.products)
       .set({
@@ -126,26 +149,29 @@ export class TenantRepository implements ITenantRepository {
     reason?: string;
   }): Promise<void> {
     await this.database.transaction(async (tx) => {
-      const product = await this.fetchProduct(tx, productId);
+      const product = await this.fetchProduct(tx as AppDatabase, productId);
 
-      await tx.update(schema.products)
+      await tx
+        .update(schema.products)
         .set({ status: newStatus, updatedAt: new Date() })
         .where(eq(schema.products.id, productId));
 
-      await tx.insert(schema.productStockLogs)
-        .values({
-          id: crypto.randomUUID(),
-          productId,
-          organizationId: this.organizationId,
-          userId,
-          oldStatus: product.status,
-          newStatus,
-          reason,
-        });
+      await tx.insert(schema.productStockLogs).values({
+        id: crypto.randomUUID(),
+        productId,
+        organizationId: this.organizationId,
+        userId,
+        oldStatus: product.status,
+        newStatus,
+        reason,
+      });
     });
   }
 
-  async confirmAllergens(productId: string, allergens: AllergenMap): Promise<Product> {
+  async confirmAllergens(
+    productId: string,
+    allergens: AllergenMap,
+  ): Promise<Product> {
     const results = await this.database
       .update(schema.products)
       .set({
@@ -161,7 +187,10 @@ export class TenantRepository implements ITenantRepository {
       )
       .returning();
 
-    return this.validateResult(results[0], `confirm allergens for ${productId}`);
+    return this.validateResult(
+      results[0],
+      `confirm allergens for ${productId}`,
+    );
   }
 
   async getCategories(): Promise<Category[]> {
@@ -187,7 +216,25 @@ export class TenantRepository implements ITenantRepository {
     return results[0] ?? null;
   }
 
-  private async fetchProduct(tx: any, productId: string): Promise<Product> {
+  async getFullMenu(): Promise<unknown[]> {
+    const client = this.database as LibSQLDatabase<typeof schema>;
+    return client.query.categories.findMany({
+      where: eq(schema.categories.organizationId, this.organizationId),
+      orderBy: schema.categories.order,
+      with: {
+        productsToCategories: {
+          with: {
+            product: true,
+          },
+        },
+      },
+    });
+  }
+
+  private async fetchProduct(
+    tx: AppDatabase,
+    productId: string,
+  ): Promise<Product> {
     const results = await tx
       .select()
       .from(schema.products)

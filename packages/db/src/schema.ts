@@ -4,7 +4,7 @@ import {
   integer,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import {
   type TranslatedString,
   type AllergenMap,
@@ -144,3 +144,27 @@ export const productStockLogs = sqliteTable("product_stock_logs", {
     sql`(strftime('%s', 'now'))`,
   ),
 });
+
+// --- Relaciones ---
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  productsToCategories: many(productsToCategories),
+}));
+
+export const productsRelations = relations(products, ({ many }) => ({
+  productsToCategories: many(productsToCategories),
+}));
+
+export const productsToCategoriesRelations = relations(
+  productsToCategories,
+  ({ one }) => ({
+    category: one(categories, {
+      fields: [productsToCategories.categoryId],
+      references: [categories.id],
+    }),
+    product: one(products, {
+      fields: [productsToCategories.productId],
+      references: [products.id],
+    }),
+  }),
+);

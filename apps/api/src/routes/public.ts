@@ -1,16 +1,18 @@
 import { Hono, type Context } from "hono";
+import { db, locals, organizations, createTenantRepository } from "@rexeat/db";
 import {
-  db,
-  categories,
-  products,
-  productsToCategories,
-  eq,
-  locals,
-  organizations,
-} from "@rexeat/db";
-import { type Category, type Product } from "@rexeat/db";
+  type Category,
+  type Product,
+  type OrganizationId,
+} from "@rexeat/types";
 
 export const publicMenu = new Hono();
+
+interface CategoryWithProducts extends Category {
+  productsToCategories: {
+    product: Product;
+  }[];
+}
 
 /**
  * GET /api/public/menu/:slug
@@ -62,49 +64,25 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     );
   }
 
-  // 3. Obtener Categorías y Productos con aislamiento estricto por organizationId
-  const [allCategories, allProducts, allRelations] = await Promise.all([
-    db
-      .select()
-      .from(categories)
-      .where(eq(categories.organizationId, org.id))
-      .orderBy(categories.order),
-    db.select().from(products).where(eq(products.organizationId, org.id)),
-    db
-      .select({
-        productId: productsToCategories.productId,
-        categoryId: productsToCategories.categoryId,
-      })
-      .from(productsToCategories)
-      .innerJoin(categories, eq(productsToCategories.categoryId, categories.id))
-      .where(eq(categories.organizationId, org.id)),
-  ]);
+  // 3. Obtener Menú completo optimizado usando el repositorio (PERF-01)
+  const repo = createTenantRepository(org.id as OrganizationId);
+  const fullMenu =
+    (await repo.getFullMenu()) as unknown as CategoryWithProducts[];
 
-  // 4. Construir la jerarquía del menú
-  const menuCategories = allCategories.map((cat: Category) => {
-    // Filtrar productos que pertenecen a esta categoría según la tabla pivot
-    const categoryProductIds = allRelations
-      .filter((rel) => rel.categoryId === cat.id)
-      .map((rel) => rel.productId);
-
-    const categoryProducts = allProducts
-      .filter((prod: Product) => categoryProductIds.includes(prod.id))
-      .map((prod: Product) => ({
-        id: prod.id,
-        name: prod.name,
-        price: prod.price,
-        allergens: prod.allergens,
-        stock_status: prod.status,
-        image: prod.image,
-      }));
-
-    return {
-      id: cat.id,
-      name: cat.name,
-      order: cat.order,
-      products: categoryProducts,
-    };
-  });
+  // 4. Mapear a la estructura de respuesta final (LCP < 1.2s)
+  const menuCategories = fullMenu.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    order: cat.order,
+    products: cat.productsToCategories.map((rel) => ({
+      id: rel.product.id,
+      name: rel.product.name,
+      price: rel.product.price,
+      allergens: rel.product.allergens,
+      stock_status: rel.product.status,
+      image: rel.product.image,
+    })),
+  }));
 
   // 5. Configuración de caché según Menu_Publico.md
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=3600");
