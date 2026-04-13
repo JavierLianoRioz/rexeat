@@ -12,20 +12,23 @@ const pusherAuthSchema = z.object({
   channel_name: z.string(),
 });
 
-pusherAuth.post(
-  "/auth",
-  zValidator("form", pusherAuthSchema),
-  async (c: Context<HonoEnv>) => {
-    const { socket_id, channel_name } = await c.req.parseBody() as { socket_id: string, channel_name: string };
-    const auth = getAuth(c);
+pusherAuth.post("/auth", zValidator("form", pusherAuthSchema), async (c) => {
+  const { socket_id, channel_name } = c.req.valid("form");
+  const auth = getAuth(c);
 
-    if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+  if (!auth?.userId || !auth?.orgId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
-    // TODO: Validar membresía real en la tabla de miembros
-    const authResponse = pusher.authenticate(socket_id, channel_name, {
-      user_id: auth.userId,
-    });
+  const channelOrgId = channel_name.split("public-org-")[1];
 
-    return c.json(authResponse);
-  },
-);
+  if (channelOrgId !== auth.orgId) {
+    return c.json({ error: "Forbidden: Org mismatch" }, 403);
+  }
+
+  const authResponse = pusher.authenticate(socket_id, channel_name, {
+    user_id: auth.userId,
+  });
+
+  return c.json(authResponse);
+});
