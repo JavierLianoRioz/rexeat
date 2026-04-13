@@ -21,7 +21,10 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
   const slug = c.req.param("slug");
 
   if (!slug) {
-    return c.json({ error: { code: "BAD_REQUEST", message: "Slug is required" } }, 400 as any);
+    return c.json(
+      { error: { code: "BAD_REQUEST", message: "Slug is required" } },
+      400,
+    );
   }
 
   // 1. Resolver el Local primero (sin join para evitar error de tipos en Edge)
@@ -40,7 +43,7 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
           message: "El menú solicitado no existe o el slug es inválido",
         },
       },
-      404 as any,
+      404,
     );
   }
 
@@ -49,11 +52,14 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     .select()
     .from(organizations)
     .where(eq(organizations.id, local.organizationId));
-  
+
   const org = orgsResult[0];
 
   if (!org) {
-    return c.json({ error: { code: "INTERNAL_ERROR", message: "Organization not found" } }, 500 as any);
+    return c.json(
+      { error: { code: "INTERNAL_ERROR", message: "Organization not found" } },
+      500,
+    );
   }
 
   // 3. Obtener Categorías y Productos con aislamiento estricto por organizationId
@@ -64,15 +70,22 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
       .where(eq(categories.organizationId, org.id))
       .orderBy(categories.order),
     db.select().from(products).where(eq(products.organizationId, org.id)),
-    db.select().from(productsToCategories),
+    db
+      .select({
+        productId: productsToCategories.productId,
+        categoryId: productsToCategories.categoryId,
+      })
+      .from(productsToCategories)
+      .innerJoin(categories, eq(productsToCategories.categoryId, categories.id))
+      .where(eq(categories.organizationId, org.id)),
   ]);
 
   // 4. Construir la jerarquía del menú
   const menuCategories = allCategories.map((cat: Category) => {
     // Filtrar productos que pertenecen a esta categoría según la tabla pivot
     const categoryProductIds = allRelations
-      .filter((rel: any) => rel.categoryId === cat.id)
-      .map((rel: any) => rel.productId);
+      .filter((rel) => rel.categoryId === cat.id)
+      .map((rel) => rel.productId);
 
     const categoryProducts = allProducts
       .filter((prod: Product) => categoryProductIds.includes(prod.id))
@@ -101,7 +114,7 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     organization: {
       id: org.id,
       name: org.businessName,
-      logo: (local.logo as any)?.url || null,
+      logo: local.logo?.url || null,
       theme: {
         primary: "#1a2b3c",
       },
