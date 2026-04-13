@@ -1,9 +1,10 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { createTenantRepository } from "@rexeat/db";
+import { createTenantRepository, type AvailabilityStatus } from "@rexeat/db";
 import { requireOrgAuth } from "../middleware/auth";
 import type { HonoEnv } from "../index";
+import { pusher } from "../lib/pusher";
 
 export const adminStock = new Hono<HonoEnv>();
 
@@ -11,8 +12,8 @@ export const adminStock = new Hono<HonoEnv>();
 adminStock.use("*", requireOrgAuth);
 
 const getContextOrThrow = (c: Context<HonoEnv>) => {
-  const orgId = c.get("orgId") as string;
-  const userId = c.get("userId") as string;
+  const orgId = c.get("orgId");
+  const userId = c.get("userId");
   if (!orgId || !userId) {
     throw new Error("Missing organization or user context");
   }
@@ -21,7 +22,7 @@ const getContextOrThrow = (c: Context<HonoEnv>) => {
 
 // Esquema de validación para el cambio de stock
 const updateStockSchema = z.object({
-  status: z.any(),
+  status: z.enum(["AVAILABLE", "OUT_OF_STOCK"]),
   reason: z.string().optional(),
 });
 
@@ -32,8 +33,8 @@ adminStock.patch(
   "/stock/:productId",
   zValidator("json", updateStockSchema),
   async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("productId") as string;
-    const { status, reason } = c.req.valid("json" as never) as any;
+    const productId = c.req.param("productId");
+    const { status, reason } = c.req.valid("json");
 
     try {
       const { orgId, userId } = getContextOrThrow(c);
@@ -42,8 +43,14 @@ adminStock.patch(
       await repo.updateProductStatusWithLog({
         productId,
         userId,
-        newStatus: status,
+        newStatus: status as AvailabilityStatus,
         reason,
+      });
+
+      await pusher.trigger(`public-org-${orgId}`, "STOCK_UPDATE", {
+        productId,
+        status,
+        organizationId: orgId,
       });
 
       return c.json({
@@ -65,26 +72,26 @@ adminStock.patch(
             message: message || "Error al actualizar el stock",
           },
         },
-        (isNotFound ? 404 : 400) as any,
+        (isNotFound ? 404 : 400) as 404 | 400,
       );
     }
   },
 );
 
 const createProductSchema = z.object({
-  name: z.any(),
-  description: z.any(),
+  name: z.string(),
+  description: z.string(),
   price: z.number().int().nonnegative(),
-  allergens: z.any(),
-  status: z.any(),
-  image: z.any().optional(),
+  allergens: z.record(z.boolean()),
+  status: z.enum(["AVAILABLE", "OUT_OF_STOCK"]),
+  image: z.string().optional(),
 });
 
 adminStock.post(
   "/products",
   zValidator("json", createProductSchema),
   async (c: Context<HonoEnv>) => {
-    const data = c.req.valid("json" as never) as any;
+    const data = c.req.valid("json");
 
     try {
       const { orgId } = getContextOrThrow(c);
@@ -93,9 +100,9 @@ adminStock.post(
       const newProduct = await repo.createProduct({
         ...data,
         id: crypto.randomUUID(),
-      } as any);
+      });
 
-      return c.json({ success: true, data: newProduct }, 201 as any);
+      return c.json({ success: true, data: newProduct }, 201);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error desconocido";
       return c.json(
@@ -105,7 +112,7 @@ adminStock.post(
             message: message || "No se pudo crear el producto",
           },
         },
-        400 as any,
+        400,
       );
     }
   },
@@ -115,8 +122,8 @@ adminStock.put(
   "/products/:id",
   zValidator("json", createProductSchema),
   async (c: Context<HonoEnv>) => {
-    const productId = c.req.param("id") as string;
-    const newData = c.req.valid("json" as never) as any;
+    const productId = c.req.param("id");
+    const newData = c.req.valid("json");
 
     try {
       const { orgId } = getContextOrThrow(c);
@@ -137,7 +144,7 @@ adminStock.put(
             message: message || "No se pudo actualizar el producto",
           },
         },
-        400 as any,
+        400,
       );
     }
   },

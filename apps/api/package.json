@@ -17,10 +17,13 @@
     "@rexeat/db": "workspace:*",
     "@rexeat/types": "workspace:*",
     "hono": "^4.7.4",
+    "pusher": "^5.3.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2"
   }
 }
