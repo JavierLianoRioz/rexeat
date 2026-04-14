@@ -1,0 +1,11 @@
+{
+  "extends": "../configs/typescript/react-native.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,1 @@
+npx turbo run test typecheck

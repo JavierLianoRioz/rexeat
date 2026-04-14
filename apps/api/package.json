@@ -1,0 +1,32 @@
+{
+  "name": "@rexeat/api",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
+    "@clerk/backend": "^3.2.8",
+    "@clerk/types": "^4.101.20",
+    "@google/generative-ai": "^0.24.1",
+    "@hono/clerk-auth": "^3.1.1",
+    "@hono/zod-validator": "^0.4.3",
+    "@rexeat/db": "workspace:*",
+    "@rexeat/types": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.7.4",
+    "pusher": "^5.3.3",
+    "svix": "^1.90.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+.output/
+.vercel/
+
+# Environment
+.env
+.env.local
+.env.*.local
+infra/penpot/config.env
+infra/penpot/.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Turbo
+.turbo/
+
+local.db
+
+.gemini/
+ 
+ 
+
+# Database
+*.db
+local.db-shm
+local.db-wal

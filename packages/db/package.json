@@ -1,0 +1,33 @@
+{
+  "name": "@rexeat/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:validate": "tsx src/validate-menu.ts",
+    "seed": "tsx src/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "health-check": "tsx src/check-health.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
+    "@libsql/client": "^0.17.2",
+    "@rexeat/types": "workspace:*",
+    "better-sqlite3": "^12.8.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0",
+    "vitest": "^3.0.7"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "jsx": "react-native",
+    "lib": ["ESNext"],
+    "moduleResolution": "node",
+    "allowJs": true,
+    "resolveJsonModule": true
+  }
+}
