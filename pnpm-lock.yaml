@@ -213,9 +213,6 @@ importers:
       "@rexeat/types":
         specifier: workspace:*
         version: link:../types
-      better-sqlite3:
-        specifier: ^12.8.0
-        version: 12.8.0
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -226,9 +223,6 @@ importers:
       "@faker-js/faker":
         specifier: ^10.4.0
         version: 10.4.0
-      "@types/better-sqlite3":
-        specifier: ^7.6.13
-        version: 7.6.13
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -15603,6 +15597,7 @@ snapshots:
   "@types/better-sqlite3@7.6.13":
     dependencies:
       "@types/node": 20.19.39
+    optional: true
 
   "@types/chai@5.2.3":
     dependencies:
@@ -16442,18 +16437,21 @@ snapshots:
     dependencies:
       bindings: 1.5.0
       prebuild-install: 7.1.3
+    optional: true
 
   big-integer@1.6.52: {}
 
   bindings@1.5.0:
     dependencies:
       file-uri-to-path: 1.0.0
+    optional: true
 
   bl@4.1.0:
     dependencies:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.2
+    optional: true
 
   bowser@2.14.1: {}
 
@@ -16565,7 +16563,8 @@ snapshots:
 
   check-error@2.1.3: {}
 
-  chownr@1.1.4: {}
+  chownr@1.1.4:
+    optional: true
 
   chownr@3.0.0: {}
 
@@ -16803,6 +16802,7 @@ snapshots:
   decompress-response@6.0.0:
     dependencies:
       mimic-response: 3.1.0
+    optional: true
 
   deep-eql@5.0.2: {}
 
@@ -16898,6 +16898,7 @@ snapshots:
   end-of-stream@1.4.5:
     dependencies:
       once: 1.4.0
+    optional: true
 
   enhanced-resolve@5.20.1:
     dependencies:
@@ -17568,7 +17569,8 @@ snapshots:
 
   events@3.3.0: {}
 
-  expand-template@2.0.3: {}
+  expand-template@2.0.3:
+    optional: true
 
   expect-type@1.3.0: {}
 
@@ -17833,7 +17835,8 @@ snapshots:
     dependencies:
       flat-cache: 4.0.1
 
-  file-uri-to-path@1.0.0: {}
+  file-uri-to-path@1.0.0:
+    optional: true
 
   fill-range@7.1.1:
     dependencies:
@@ -17904,7 +17907,8 @@ snapshots:
 
   fresh@0.5.2: {}
 
-  fs-constants@1.0.0: {}
+  fs-constants@1.0.0:
+    optional: true
 
   fs.realpath@1.0.0: {}
 
@@ -17972,7 +17976,8 @@ snapshots:
       - conventional-commits-filter
       - conventional-commits-parser
 
-  github-from-package@0.0.0: {}
+  github-from-package@0.0.0:
+    optional: true
 
   glob-parent@5.1.2:
     dependencies:
@@ -19386,7 +19391,8 @@ snapshots:
 
   mimic-function@5.0.1: {}
 
-  mimic-response@3.1.0: {}
+  mimic-response@3.1.0:
+    optional: true
 
   minimatch@10.2.5:
     dependencies:
@@ -19408,7 +19414,8 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
-  mkdirp-classic@0.5.3: {}
+  mkdirp-classic@0.5.3:
+    optional: true
 
   mkdirp@1.0.4: {}
 
@@ -19426,7 +19433,8 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  napi-build-utils@2.0.0: {}
+  napi-build-utils@2.0.0:
+    optional: true
 
   napi-postinstall@0.3.4: {}
 
@@ -19470,6 +19478,7 @@ snapshots:
   node-abi@3.89.0:
     dependencies:
       semver: 7.7.4
+    optional: true
 
   node-domexception@1.0.0: {}
 
@@ -19747,6 +19756,7 @@ snapshots:
       simple-get: 4.0.1
       tar-fs: 2.1.4
       tunnel-agent: 0.6.0
+    optional: true
 
   prelude-ls@1.2.1: {}
 
@@ -19789,6 +19799,7 @@ snapshots:
     dependencies:
       end-of-stream: 1.4.5
       once: 1.4.0
+    optional: true
 
   punycode@2.3.1: {}
 
@@ -20009,6 +20020,7 @@ snapshots:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
+    optional: true
 
   readline@1.3.0: {}
 
@@ -20340,13 +20352,15 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  simple-concat@1.0.1: {}
+  simple-concat@1.0.1:
+    optional: true
 
   simple-get@4.0.1:
     dependencies:
       decompress-response: 6.0.0
       once: 1.4.0
       simple-concat: 1.0.1
+    optional: true
 
   simple-plist@1.3.1:
     dependencies:
@@ -20487,6 +20501,7 @@ snapshots:
   string_decoder@1.3.0:
     dependencies:
       safe-buffer: 5.2.1
+    optional: true
 
   strip-ansi@5.2.0:
     dependencies:
@@ -20571,6 +20586,7 @@ snapshots:
       mkdirp-classic: 0.5.3
       pump: 3.0.4
       tar-stream: 2.2.0
+    optional: true
 
   tar-stream@2.2.0:
     dependencies:
@@ -20579,6 +20595,7 @@ snapshots:
       fs-constants: 1.0.0
       inherits: 2.0.4
       readable-stream: 3.6.2
+    optional: true
 
   tar@7.5.13:
     dependencies:
@@ -20686,6 +20703,7 @@ snapshots:
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.2.1
+    optional: true
 
   turbo@2.9.6:
     optionalDependencies:
@@ -20835,7 +20853,8 @@ snapshots:
     dependencies:
       react: 19.2.4
 
-  util-deprecate@1.0.2: {}
+  util-deprecate@1.0.2:
+    optional: true
 
   utils-merge@1.0.1: {}
 
