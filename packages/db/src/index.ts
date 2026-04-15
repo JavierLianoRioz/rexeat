@@ -13,7 +13,7 @@ export type AppDatabase = ReturnType<typeof createDb>;
  * Crea una instancia de la base de datos (Turso/LibSQL).
  */
 export function createDb(url: string = "file:local.db", authToken?: string) {
-  const client = createClient({ url, authToken });
+  const client = createClient({ url, ...(authToken ? { authToken } : {}) });
   return drizzle(client, { schema });
 }
 

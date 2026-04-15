@@ -1,5 +1,4 @@
-﻿import { Suspense } from "react";
-import Image from "next/image";
+﻿import Image from "next/image";
 import { notFound } from "next/navigation";
 
 async function getMenu(slug: string) {

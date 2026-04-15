@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import { eq } from "drizzle-orm";
 import { db, locals, organizations, createTenantRepository } from "@rexeat/db";
 import {
   type Category,

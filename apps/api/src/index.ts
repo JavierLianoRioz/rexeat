@@ -5,17 +5,38 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { clerkMiddleware } from "@hono/clerk-auth";
 import { version } from "@rexeat/db";
-import type { PublicMenuResponse } from "@rexeat/types";
+
+// Routes
+import { publicMenu } from "./routes/public";
+import { adminStock } from "./routes/admin";
+import { aiRoutes } from "./routes/ai";
+import { webhooks } from "./routes/webhooks";
+import { pusherAuth } from "./routes/pusher";
+
+/**
+ * Entorno de Hono compartido en toda la aplicación.
+ */
+export type HonoEnv = {
+  Variables: {
+    orgId: string;
+    userId: string;
+    jwtPayload: unknown;
+  };
+};
 
 /**
  * Rexeat API - High-performance Edge Backend
  */
-const app = new Hono().basePath("/api");
+const app = new Hono<HonoEnv>().basePath("/api");
 
 // --- Middlewares ---
 app.use("*", logger());
 app.use("*", cors());
+
+// Clerk middleware global (necesario para las rutas protegidas)
+app.use("*", clerkMiddleware());
 
 // --- Health Check ---
 app.get("/health", (c) => {
@@ -27,61 +48,17 @@ app.get("/health", (c) => {
   });
 });
 
-// --- Public Routes (Customer Facing) ---
+// --- Public Routes ---
+app.route("/public", publicMenu);
 
-/**
- * Fetch the public menu for a specific restaurant (tenant) by slug.
- */
-app.get("/menu/:slug", (c) => {
-  const slug = c.req.param("slug");
+// --- Admin & Protected Routes ---
+app.route("/admin", adminStock);
+app.route("/admin/ai", aiRoutes);
 
-  // Placeholder logic for now
-  const response: PublicMenuResponse = {
-    tenant: {
-      name: `Restaurant ${slug.toUpperCase()}`,
-      primaryColor: "#E63946",
-      accentColor: "#F1FAEE",
-    },
-    menu: {
-      id: "menu_1",
-      name: "Main Menu",
-      isActive: true,
-      description: "Welcome to our menu",
-      categories: [
-        {
-          id: "cat_1",
-          menuId: "menu_1",
-          name: "Starters",
-          order: 1,
-          items: [
-            {
-              id: "item_1",
-              categoryId: "cat_1",
-              name: "Classic Salad",
-              price: 850, // 8.50 EUR
-              allergens: ["milk"],
-              isAvailable: true,
-              isVegetarian: true,
-              isVegan: false,
-              isGlutenFree: true,
-            },
-          ],
-        },
-      ],
-    },
-  };
+// --- Webhooks ---
+app.route("/webhooks", webhooks);
 
-  return c.json(response);
-});
-
-// --- Admin Routes (Internal) ---
-
-app.get("/admin", (c) => {
-  return c.json({
-    message: "Admin endpoints protected by Clerk session (WIP)",
-  });
-});
-
-// --- Finalize ---
+// --- Pusher Auth ---
+app.route("/pusher", pusherAuth);
 
 export default app;

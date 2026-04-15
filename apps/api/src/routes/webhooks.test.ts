@@ -26,8 +26,8 @@ describe("Webhooks - processClerkEvent", () => {
 
   it("debe insertar una organización cuando se crea en Clerk", async () => {
     const data = { id: "org_123", name: "Restaurante Test" };
-    
-    await processClerkEvent("organization.created", data);
+
+    await processClerkEvent({ type: "organization.created", data });
 
     expect(db.insert).toHaveBeenCalledWith(organizations);
     expect(db.values).toHaveBeenCalledWith({
@@ -43,7 +43,7 @@ describe("Webhooks - processClerkEvent", () => {
       role: "org:admin",
     };
 
-    await processClerkEvent("organizationMembership.created", data);
+    await processClerkEvent({ type: "organizationMembership.created", data });
 
     expect(db.insert).toHaveBeenCalledWith(users);
     expect(db.values).toHaveBeenCalledWith({
@@ -60,10 +60,12 @@ describe("Webhooks - processClerkEvent", () => {
       role: "org:member",
     };
 
-    await processClerkEvent("organizationMembership.created", data);
+    await processClerkEvent({ type: "organizationMembership.created", data });
 
-    expect(db.values).toHaveBeenCalledWith(expect.objectContaining({
-      role: "waiter",
-    }));
+    expect(db.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: "waiter",
+      }),
+    );
   });
 });

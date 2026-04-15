@@ -312,7 +312,7 @@ async function createProducts(orgId: string, categoryIds: string[]) {
     for (const categoryId of chosenCategories) {
       await db
         .insert(productsToCategories)
-        .values({ productId: id, categoryId });
+        .values({ productId: id, categoryId, organizationId: orgId });
     }
   }
 }
@@ -404,7 +404,7 @@ async function seedCantabrianRestaurant() {
 
     await db
       .insert(productsToCategories)
-      .values({ productId: id, categoryId: catId });
+      .values({ productId: id, categoryId: catId, organizationId: orgId });
   }
 }
 

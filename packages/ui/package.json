@@ -15,5 +15,12 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-native": "^0.78.0"
+  },
+  "devDependencies": {
+    "@rexeat/eslint-config": "workspace:*",
+    "@rexeat/tsconfig": "workspace:*",
+    "@types/react": "^19.2.14",
+    "@types/react-native": "^0.73.0",
+    "typescript": "6.0.2"
   }
 }
