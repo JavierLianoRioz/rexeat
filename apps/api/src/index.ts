@@ -5,8 +5,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { version, type TenantRepository } from "@rexeat/db";
-import type { PublicMenuResponse } from "@rexeat/types";
+import {
+  version,
+  type TenantRepository,
+  findLocalBySlug,
+  createTenantRepository,
+} from "@rexeat/db";
+import type { PublicMenuResponse, TranslatedString } from "@rexeat/types";
 
 // Importación de rutas
 import { adminStock } from "./routes/admin";
@@ -55,42 +60,62 @@ app.route("/admin", adminStock);
 /**
  * Fetch the public menu for a specific restaurant (tenant) by slug.
  */
-app.get("/menu/:slug", (c) => {
+app.get("/menu/:slug", async (c) => {
   const slug = c.req.param("slug");
 
-  // Placeholder logic for now
+  // 1. Resolver el local por slug
+  const local = await findLocalBySlug(slug);
+
+  if (!local) {
+    return c.json(
+      {
+        error: {
+          code: "NOT_FOUND",
+          message: "No se ha encontrado el restaurante solicitado",
+        },
+      },
+      404,
+    );
+  }
+
+  // 2. Obtener el menú completo usando el TenantRepository (Aislado)
+  const repo = createTenantRepository(local.organizationId);
+  const categories = await repo.getFullMenu();
+
+  // 3. Mapear al formato PublicMenuResponse
   const response: PublicMenuResponse = {
     tenant: {
-      name: `Restaurant ${slug.toUpperCase()}`,
-      primaryColor: "#E63946",
+      name: (local.name as TranslatedString).es || "Restaurante", // Por ahora ES por defecto
+      logo: local.logo?.url,
+      primaryColor: "#E63946", // TODO: Sacar de la configuración del local si existe
       accentColor: "#F1FAEE",
     },
     menu: {
-      id: "menu_1",
-      name: "Main Menu",
+      id: "main",
+      name: "Menú Principal",
       isActive: true,
-      description: "Welcome to our menu",
-      categories: [
-        {
-          id: "cat_1",
-          menuId: "menu_1",
-          name: "Starters",
-          order: 1,
-          items: [
-            {
-              id: "item_1",
-              categoryId: "cat_1",
-              name: "Classic Salad",
-              price: 850, // 8.50 EUR
-              allergens: ["milk"],
-              isAvailable: true,
-              isVegetarian: true,
-              isVegan: false,
-              isGlutenFree: true,
-            },
-          ],
-        },
-      ],
+      categories: categories.map((cat) => ({
+        id: cat.id,
+        menuId: "main",
+        name: (cat.name as TranslatedString).es || "Sin Nombre",
+        order: cat.order,
+        items: cat.productsToCategories
+          .map((rel) => rel.product)
+          .filter(Boolean)
+          .map((prod) => ({
+            id: prod!.id,
+            categoryId: cat.id,
+            name: (prod!.name as TranslatedString).es || "Sin Nombre",
+            price: prod!.price,
+            allergens: Object.entries(prod!.allergens)
+              .filter(([_, value]) => value === true)
+              .map(([key]) => key),
+            isAvailable: prod!.status === "in_stock",
+            isVegetarian: false, // TODO: Añadir flags al esquema de productos si se requieren
+            isVegan: false,
+            isGlutenFree: !prod!.allergens.gluten,
+          })),
+      })),
     },
   };
 

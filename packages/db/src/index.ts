@@ -259,6 +259,21 @@ export class TenantRepository {
 }
 
 /**
+ * Busca un local por su slug único.
+ * Útil para resolver la organización a partir de una URL pública.
+ */
+export async function findLocalBySlug(
+  slug: string,
+  database: AppDatabase = db,
+) {
+  const [local] = await database
+    .select()
+    .from(schema.locals)
+    .where(eq(schema.locals.slug, slug));
+  return local;
+}
+
+/**
  * Factory para crear repositorios de inquilinos de forma sencilla.
  */
 export function createTenantRepository(
