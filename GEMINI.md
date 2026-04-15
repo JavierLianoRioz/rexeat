@@ -43,11 +43,13 @@ The core project specifications are located in `docs/internal/`:
 - **Database:** Use **Drizzle ORM** for SQLite schema management.
 - **Performance:** Target LCP (Largest Contentful Paint) of < 1.2s for the customer-facing web menu.
 - **Data Safety:** Prices are always stored in **cents** as integers to avoid rounding errors.
+- **Compliance & Licensing:** All core business logic and shared types must include the Rexeat copyright header and reference the **Polyform Non-Commercial 1.0.0** license.
 
 ## AI Agent Memory & Guidelines
 
 To ensure consistency and high quality, the AI assistant MUST strictly follow the specialized skills defined in this repository. Before and during tasks, the agent should consult these references:
 
+- **Legal & Compliance**: MUST ensure all new core files (`apps/*/src/index.ts`, `packages/*/src/index.ts`) include the copyright notice to prevent missing commercial restrictions.
 - **Coding Quality**: [Clean Code](.agents/skills/clean-code/SKILL.md) & [Best Practices](.agents/skills/best-practices/SKILL.md)
 - **Version Control**: [Git Commit Helper](.agents/skills/git-commit-helper/SKILL.md)
 - **Architecture**: [Monorepo](.agents/skills/monorepo-architect/SKILL.md), [Multi-tenant SaaS](.agents/skills/saas-multi-tenant/SKILL.md), & [React Native](.agents/skills/react-native-architecture/SKILL.md)
