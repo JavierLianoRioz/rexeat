@@ -1,5 +1,5 @@
 {
-  "extends": "@rexeat/tsconfig/base.json",
+  "extends": "../../packages/configs/typescript/base.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
