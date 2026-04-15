@@ -1,0 +1,21 @@
+{
+  "name": "@rexeat/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "base.json",
+    "edge.json",
+    "nextjs.json",
+    "react-native.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./edge.json": "./edge.json",
+    "./nextjs.json": "./nextjs.json",
+    "./react-native.json": "./react-native.json"
+  }
+}

@@ -24,7 +24,7 @@ describe("TenantRepository - Aislamiento y Actualización", () => {
     ];
 
     for (const table of tables) {
-      testDb.run(sql.raw(table));
+      await testDb.run(sql.raw(table));
     }
 
     // Setup de organizaciones
