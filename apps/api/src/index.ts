@@ -5,13 +5,28 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { version } from "@rexeat/db";
+import { version, type TenantRepository } from "@rexeat/db";
 import type { PublicMenuResponse } from "@rexeat/types";
+
+// Importación de rutas
+import { adminStock } from "./routes/admin";
+
+/**
+ * Entorno de Hono compartido para toda la API.
+ */
+export interface HonoEnv {
+  Variables: {
+    orgId: string;
+    userId: string;
+    jwtPayload: Record<string, unknown>;
+    repo: TenantRepository;
+  };
+}
 
 /**
  * Rexeat API - High-performance Edge Backend
  */
-const app = new Hono().basePath("/api");
+const app = new Hono<HonoEnv>().basePath("/api");
 
 // --- Middlewares ---
 app.use("*", logger());
@@ -26,6 +41,14 @@ app.get("/health", (c) => {
     runtime: "edge",
   });
 });
+
+// --- Admin Routes (Internal & Protected) ---
+
+/**
+ * Todas las rutas de administración requieren autenticación de organización
+ * e inyección automática del repositorio aislado.
+ */
+app.route("/admin", adminStock);
 
 // --- Public Routes (Customer Facing) ---
 
