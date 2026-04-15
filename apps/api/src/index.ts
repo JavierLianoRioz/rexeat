@@ -1,3 +1,7 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";

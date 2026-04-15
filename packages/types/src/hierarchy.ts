@@ -1,3 +1,7 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import { z } from "zod";
 import { TranslatedStringSchema } from "./i18n";
 import { OrganizationIdSchema } from "./auth";

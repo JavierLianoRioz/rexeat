@@ -1,3 +1,7 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
