@@ -129,6 +129,7 @@ export class AIClient {
 
     const finalItems = items.map((item, index) => ({
       ...item,
+      price: item.parsedPrice || 0, // Inyectar el precio parseado
       name: translationResult.translations[index] || { es: String(item.name) },
     }));
 
@@ -146,17 +147,23 @@ export class AIClient {
 
   private getDigitizationPrompt(): string {
     return `
-      Analiza esta imagen de un menú de restaurante.
-      Extrae todos los platos, bebidas y productos con sus precios.
-      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto tenga:
-      - "name": Nombre del producto en español.
-      - "originalPriceText": Texto original del precio (ej: "12,50€").
-      - "parsedPrice": El precio convertido a un número entero en céntimos (ej: 1250).
-      - "confidence": Un número entre 0 y 1 indicando la confianza de la extracción.
+      Eres un experto en digitalización de menús de restaurantes. 
+      Analiza la imagen adjunta y extrae todos los productos, platos y bebidas.
+
+      Para cada ítem, identifica:
+      1. Nombre exacto en español.
+      2. Precio: Busca números a la derecha del nombre o debajo. Ignora números que parezcan ser de alérgenos (ej: del 1 al 14).
       
-      Reglas críticas:
-      1. NO inventes precios. Si no hay precio, usa 0.
-      2. Devuelve SOLO JSON puro.
+      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto sea:
+      - "name": Nombre del producto.
+      - "originalPriceText": El texto tal cual aparece (ej: "12,50", "9.00€", "15-").
+      - "parsedPrice": El valor convertido a un número entero en CÉNTIMOS (ej: 12.50€ -> 1250). Si no hay precio, usa 0.
+      - "confidence": Nivel de confianza de la extracción (0.0 a 1.0).
+
+      Reglas Críticas:
+      - NO inventes datos. Si no estás seguro de un precio, pon 0 en "parsedPrice".
+      - Procesa TODA la imagen, no te detengas a la mitad.
+      - Devuelve exclusivamente JSON puro sin etiquetas de markdown.
     `;
   }
 
