@@ -4,16 +4,15 @@
  */
 import { type TranslatedString } from "@rexeat/types";
 
-export type TargetLanguage = Exclude<keyof TranslatedString, "es">;
-
-interface DeepLTranslationResponse {
-  translations: Array<{
-    detected_source_language: string;
-    text: string;
-  }>;
+/**
+ * Interfaz para servicios de traducción.
+ * Sigue el principio de Inversión de Dependencia (DIP).
+ */
+export interface ITranslationService {
+  translateBatch(texts: string[]): Promise<TranslatedString[]>;
 }
 
-export class TranslationService {
+export class TranslationService implements ITranslationService {
   private readonly apiUrl = "https://api-free.deepl.com/v2/translate";
 
   constructor(private readonly apiKey: string) {}

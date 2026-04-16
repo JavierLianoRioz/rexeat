@@ -20,7 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  client.close();
+  _client.close();
   if (existsSync("test.db")) {
     unlinkSync("test.db");
   }

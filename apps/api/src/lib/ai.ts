@@ -11,23 +11,22 @@ import {
   type DigitizationItem,
   DigitizationResponseSchema,
 } from "@rexeat/types";
-import { TranslationService } from "./translation";
+import { type ITranslationService, TranslationService } from "./translation";
 
 export class AIClient {
   private genAI: GoogleGenerativeAI;
   private geminiModel: GenerativeModel;
   private s3Client: S3Client;
-  private translationService: TranslationService;
 
   constructor(
     private readonly config: {
       geminiApiKey: string;
-      deeplApiKey: string;
       r2AccountId: string;
       r2AccessKeyId: string;
       r2SecretAccessKey: string;
       r2BucketName: string;
     },
+    private readonly translationService: ITranslationService,
   ) {
     this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
     this.geminiModel = this.genAI.getGenerativeModel({
@@ -42,8 +41,6 @@ export class AIClient {
         secretAccessKey: config.r2SecretAccessKey,
       },
     });
-
-    this.translationService = new TranslationService(config.deeplApiKey);
   }
 
   async digitizeMenu(
@@ -141,18 +138,34 @@ interface AIClientConfig {
 }
 
 export function getAIClient() {
-  const config = {
-    geminiApiKey: process.env["GEMINI_API_KEY"],
-    deeplApiKey: process.env["DEEPL_API_KEY"],
-    r2AccountId: process.env["R2_ACCOUNT_ID"],
-    r2AccessKeyId: process.env["R2_ACCESS_KEY_ID"],
-    r2SecretAccessKey: process.env["R2_SECRET_ACCESS_KEY"],
-    r2BucketName: process.env["R2_BUCKET_NAME"],
-  };
+  const geminiApiKey = process.env["GEMINI_API_KEY"];
+  const deeplApiKey = process.env["DEEPL_API_KEY"];
+  const r2AccountId = process.env["R2_ACCOUNT_ID"];
+  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
+  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
+  const r2BucketName = process.env["R2_BUCKET_NAME"];
 
-  if (Object.values(config).some((v) => !v)) {
+  if (
+    !geminiApiKey ||
+    !deeplApiKey ||
+    !r2AccountId ||
+    !r2AccessKeyId ||
+    !r2SecretAccessKey ||
+    !r2BucketName
+  ) {
     throw new Error("Servicios de IA o Almacenamiento no configurados");
   }
 
-  return new AIClient(config as AIClientConfig);
+  const translationService = new TranslationService(deeplApiKey);
+
+  return new AIClient(
+    {
+      geminiApiKey,
+      r2AccountId,
+      r2AccessKeyId,
+      r2SecretAccessKey,
+      r2BucketName,
+    },
+    translationService,
+  );
 }
