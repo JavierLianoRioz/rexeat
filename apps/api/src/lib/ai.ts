@@ -1,46 +1,44 @@
-import {
-  GoogleGenerativeAI,
-  type GenerativeModel,
-} from "@google/generative-ai";
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
-  type TranslatedString,
   type DigitizationItem,
   DigitizationResponseSchema,
 } from "@rexeat/types";
+import { type ITranslationService, TranslationService } from "./translation";
 
-// Tipado para DeepL
-interface DeepLTranslationResponse {
-  translations: Array<{
-    detected_source_language: string;
-    text: string;
-  }>;
+export interface DigitizationResult {
+  items: DigitizationItem[];
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    aiCostMillicents: number;
+    translationCostMillicents: number;
+    model: string;
+  };
 }
 
-/**
- * Cliente de IA para Rexeat.
- * Gestiona digitalización con Gemini, traducciones con DeepL y persistencia en R2.
- */
 export class AIClient {
-  private genAI: GoogleGenerativeAI;
-  private geminiModel: GenerativeModel;
   private s3Client: S3Client;
+  private readonly openRouterUrl =
+    "https://openrouter.ai/api/v1/chat/completions";
+
+  // Precios estimados en milicéntimos (1/1000 de céntimo)
+  private readonly PRICE_PER_1M_INPUT_TOKENS = 100; // $0.10 / 1M = 100 milicéntimos
+  private readonly PRICE_PER_1M_OUTPUT_TOKENS = 400; // $0.40 / 1M = 400 milicéntimos
 
   constructor(
     private readonly config: {
-      geminiApiKey: string;
-      deeplApiKey: string;
+      openRouterApiKey: string;
       r2AccountId: string;
       r2AccessKeyId: string;
       r2SecretAccessKey: string;
       r2BucketName: string;
     },
+    private readonly translationService: ITranslationService,
   ) {
-    this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
-    this.geminiModel = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-    });
-
     this.s3Client = new S3Client({
       region: "auto",
       endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
@@ -51,163 +49,192 @@ export class AIClient {
     });
   }
 
-  /**
-   * Digitaliza una imagen de menú físico usando Gemini y la persiste en R2.
-   */
   async digitizeMenu(
     imageBuffer: ArrayBuffer,
     mimeType: string,
     organizationId: string,
-  ): Promise<DigitizationItem[]> {
+  ): Promise<DigitizationResult> {
     const requestId = crypto.randomUUID();
-    const fileExtension = mimeType.split("/")[1] || "jpg";
-    const fileName = `${organizationId}/uploads/${requestId}.${fileExtension}`;
-
-    // 1. Persistencia en R2 (Auditoría y almacenamiento)
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: this.config.r2BucketName,
-        Key: fileName,
-        Body: new Uint8Array(imageBuffer),
-        ContentType: mimeType,
-      }),
-    );
-
-    // 2. Procesamiento con Gemini
-    const prompt = `
-      Analiza esta imagen de un menú de restaurante.
-      Extrae todos los platos, bebidas y productos con sus precios.
-      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto tenga:
-      - "name": Nombre del producto.
-      - "originalPriceText": Texto original del precio (ej: "12,50€").
-      - "parsedPrice": El precio convertido a un número entero en céntimos (ej: 1250).
-      - "confidence": Un número entre 0 y 1 indicando la confianza de la extracción.
-      
-      Reglas críticas:
-      1. NO inventes precios.
-      2. Si no hay precio claro, usa 0.
-      3. Devuelve SOLO JSON puro, sin markdown.
-    `;
-
-    const base64Data = btoa(
-      new Uint8Array(imageBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        "",
-      ),
-    );
-
-    const result = await this.geminiModel.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType,
-        },
-      },
-    ]);
-
-    const response = await result.response;
-    const text = response.text();
+    const fileName = `${organizationId}/uploads/${requestId}.${mimeType.split("/")[1] || "jpg"}`;
 
     try {
-      const cleanJson = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleanJson);
-
-      const validated = DigitizationResponseSchema.parse({
-        items: parsed.items,
-        requestId,
-      });
-
-      return validated.items;
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.config.r2BucketName,
+          Key: fileName,
+          Body: new Uint8Array(imageBuffer),
+          ContentType: mimeType,
+        }),
+      );
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("Error al procesar Gemini:", e);
-      throw new Error(
-        `No se pudo procesar la imagen del menú: ${e instanceof Error ? e.message : String(e)}`,
-        { cause: e },
+      console.warn(
+        "⚠️ Advertencia: Fallo al subir a R2, continuando solo con IA:",
+        e,
       );
     }
-  }
 
-  async translateText(
-    text: string,
-    _sourceLang: string = "es",
-  ): Promise<TranslatedString> {
-    const targetLangs = ["en", "fr", "de", "nl", "it"] as const;
-    const result: TranslatedString = {
-      es: text,
-      en: "",
-      fr: "",
-      de: "",
-      nl: "",
-      it: "",
-    };
+    const prompt = this.getDigitizationPrompt();
+    const base64Image = this.toBase64(imageBuffer);
+    const model = "google/gemini-2.0-flash-001";
 
-    await Promise.all(
-      targetLangs.map(async (lang) => {
-        try {
-          const translated = await this.callDeepL(text, lang.toUpperCase());
-          result[lang] = translated;
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn(`Error DeepL (${lang}):`, e);
-          result[lang] = "";
-        }
-      }),
-    );
-
-    return result;
-  }
-
-  private async callDeepL(text: string, targetLang: string): Promise<string> {
-    const url = `https://api-free.deepl.com/v2/translate`;
-
-    const response = await fetch(url, {
+    const response = await fetch(this.openRouterUrl, {
       method: "POST",
       headers: {
-        Authorization: `DeepL-Auth-Key ${this.config.deeplApiKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${this.config.openRouterApiKey}`,
+        "Content-Type": "application/json",
+        "X-Title": "Rexeat API",
       },
-      body: new URLSearchParams({
-        text,
-        target_lang: targetLang === "EN" ? "EN-US" : targetLang,
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${mimeType};base64,${base64Image}` },
+              },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`DeepL error: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`OpenRouter Error (${response.status}): ${errorText}`);
     }
 
-    const data = (await response.json()) as DeepLTranslationResponse;
-    return data.translations[0]?.text || "";
+    const data = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
+
+    const aiText = data.choices?.[0]?.message?.content;
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+    const aiCost = Math.ceil(
+      (usage.prompt_tokens * this.PRICE_PER_1M_INPUT_TOKENS) / 1000 +
+        (usage.completion_tokens * this.PRICE_PER_1M_OUTPUT_TOKENS) / 1000,
+    );
+
+    if (!aiText) throw new Error("No response from AI");
+
+    const items = await this.parseAIResponse(aiText, requestId);
+
+    const translationResult = await this.translationService.translateBatch(
+      items.map((item) => String(item.name.es)),
+    );
+
+    const finalItems = items.map((item, index) => ({
+      ...item,
+      name: translationResult.translations[index] || item.name,
+    }));
+
+    return {
+      items: finalItems,
+      usage: {
+        promptTokens: usage.prompt_tokens,
+        completionTokens: usage.completion_tokens,
+        aiCostMillicents: aiCost,
+        translationCostMillicents: translationResult.usage.costEstimate,
+        model,
+      },
+    };
+  }
+
+  private getDigitizationPrompt(): string {
+    return `
+      Eres un experto en digitalización de menús de restaurantes. 
+      Analiza la imagen adjunta y extrae todos los productos, platos y bebidas.
+
+      ### REGLA DE ORO DE CONTEXTO (CRÍTICA):
+      Los menús suelen estar organizados por secciones (ej: "TOSTADAS", "TACOS", "ENTRANTES"). 
+      Si un producto está bajo una sección y su nombre es incompleto (ej: "de Atún", "de Pollo"), DEBES reconstruir el nombre completo usando el contexto de la sección.
+      - Ejemplo: Sección "TOSTADAS" + Producto "de Atún" => Nombre: "Tostada de Atún".
+      - Ejemplo: Sección "TACOS" + Producto "Pastor" => Nombre: "Taco al Pastor".
+
+      Para cada ítem, identifica:
+      1. Nombre descriptivo completo (reconstruido con su sección si es necesario).
+      2. Precio: Busca números a la derecha del nombre o debajo. Ignora números de alérgenos.
+      
+      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto sea:
+      - "name": Nombre completo y descriptivo del producto en español.
+      - "originalPriceText": El texto tal cual aparece (ej: "12,50", "9.00€").
+      - "parsedPrice": El valor en CÉNTIMOS (ej: 1250). Si no hay precio, usa 0.
+      - "confidence": Nivel de confianza (0.0 a 1.0).
+
+      Reglas Adicionales:
+      - NO inventes datos.
+      - Devuelve exclusivamente JSON puro sin etiquetas de markdown.
+    `;
+  }
+
+  private toBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]!);
+    }
+    return btoa(binary);
+  }
+
+  private async parseAIResponse(
+    text: string,
+    requestId: string,
+  ): Promise<DigitizationItem[]> {
+    try {
+      const parsed = JSON.parse(text) as {
+        items: Array<{ name: string; [key: string]: unknown }>;
+      };
+      const validated = DigitizationResponseSchema.parse({
+        items: parsed.items.map((item) => ({
+          ...item,
+          name: { es: String(item.name) },
+        })),
+        requestId,
+      });
+      return validated.items;
+    } catch (e) {
+      throw new Error(`Failed to parse AI output: ${text}`, { cause: e });
+    }
   }
 }
 
-interface AIClientConfig {
-  geminiApiKey: string;
-  deeplApiKey: string;
-  r2AccountId: string;
-  r2AccessKeyId: string;
-  r2SecretAccessKey: string;
-  r2BucketName: string;
-}
-
-/**
- * Factory para obtener una instancia configurada de AIClient.
- */
 export function getAIClient() {
-  const config = {
-    geminiApiKey: process.env["GEMINI_API_KEY"],
-    deeplApiKey: process.env["DEEPL_API_KEY"],
-    r2AccountId: process.env["R2_ACCOUNT_ID"],
-    r2AccessKeyId: process.env["R2_ACCESS_KEY_ID"],
-    r2SecretAccessKey: process.env["R2_SECRET_ACCESS_KEY"],
-    r2BucketName: process.env["R2_BUCKET_NAME"],
-  };
+  const openRouterApiKey = process.env["OPENROUTER_API_KEY"];
+  const deeplApiKey = process.env["DEEPL_API_KEY"];
+  const r2AccountId = process.env["R2_ACCOUNT_ID"];
+  const r2AccessKeyId = process.env["R2_ACCESS_KEY_ID"];
+  const r2SecretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
+  const r2BucketName = process.env["R2_BUCKET_NAME"];
 
-  if (Object.values(config).some((v) => !v)) {
-    throw new Error("Servicios de IA o Almacenamiento no configurados");
+  if (
+    !openRouterApiKey ||
+    !deeplApiKey ||
+    !r2AccountId ||
+    !r2AccessKeyId ||
+    !r2SecretAccessKey ||
+    !r2BucketName
+  ) {
+    throw new Error(
+      "Servicios de IA o Almacenamiento no configurados (Falta OPENROUTER_API_KEY o R2 config)",
+    );
   }
 
-  return new AIClient(config as AIClientConfig);
+  const translationService = new TranslationService(deeplApiKey);
+
+  return new AIClient(
+    {
+      openRouterApiKey,
+      r2AccountId,
+      r2AccessKeyId,
+      r2SecretAccessKey,
+      r2BucketName,
+    },
+    translationService,
+  );
 }

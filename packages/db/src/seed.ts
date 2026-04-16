@@ -233,14 +233,19 @@ function getRandomImage(width: number, height: number) {
 }
 
 async function createZones(localId: string, orgId: string) {
-  const zonesToCreate = ["Terraza", "Salón Principal", "Barra", "VIP"];
-  for (const name of zonesToCreate) {
+  const zonesToCreate = [
+    { name: "Terraza", slug: "terraza" },
+    { name: "Salón Principal", slug: "salon" },
+    { name: "Barra", slug: "barra" },
+    { name: "VIP", slug: "vip" },
+  ];
+  for (const { name, slug } of zonesToCreate) {
     await db.insert(zones).values({
       id: faker.string.uuid(),
       localId,
       organizationId: orgId,
       name,
-      nfcToken: faker.string.alphanumeric(10),
+      slug,
     });
   }
 }

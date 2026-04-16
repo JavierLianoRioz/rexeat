@@ -1,10 +1,17 @@
 import { Hono, type Context } from "hono";
 import { eq } from "drizzle-orm";
-import { db, locals, organizations, createTenantRepository } from "@rexeat/db";
+import {
+  db,
+  locals,
+  organizations,
+  createTenantRepository,
+  languageRequests,
+} from "@rexeat/db";
 import {
   type Category,
   type Product,
   type OrganizationId,
+  i18n,
 } from "@rexeat/types";
 
 export const publicMenu = new Hono();
@@ -18,10 +25,13 @@ interface CategoryWithProducts extends Category {
 /**
  * GET /api/public/menu/:slug
  * Devuelve el menú completo de un local basado en su slug público.
- * Optimizado para LCP < 1.2s y uso de caché en el Edge.
+ * Optimizado para LCP < 1.2s y uso de analítica de idiomas.
  */
 publicMenu.get("/menu/:slug", async (c: Context) => {
   const slug = c.req.param("slug");
+  const requestedLang =
+    c.req.query("lang") || c.req.header("Accept-Language") || "es";
+  const resolvedLang = i18n.resolve(requestedLang);
 
   if (!slug) {
     return c.json(
@@ -30,7 +40,7 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     );
   }
 
-  // 1. Resolver el Local primero (sin join para evitar error de tipos en Edge)
+  // 1. Resolver el Local primero
   const localsResult = await db
     .select()
     .from(locals)
@@ -40,12 +50,7 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
 
   if (!local) {
     return c.json(
-      {
-        error: {
-          code: "NOT_FOUND",
-          message: "El menú solicitado no existe o el slug es inválido",
-        },
-      },
+      { error: { code: "NOT_FOUND", message: "El menú solicitado no existe" } },
       404,
     );
   }
@@ -65,12 +70,22 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
     );
   }
 
-  // 3. Obtener Menú completo optimizado usando el repositorio (PERF-01)
+  // 3. Registro de Analítica de Idiomas (Background Task)
+  c.executionCtx.waitUntil(
+    db.insert(languageRequests).values({
+      organizationId: org.id,
+      localId: local.id,
+      langCode: requestedLang.substring(0, 50), // Limitar longitud por seguridad
+      resolvedLang,
+    }),
+  );
+
+  // 4. Obtener Menú completo optimizado
   const repo = createTenantRepository(org.id as OrganizationId);
   const fullMenu =
     (await repo.getFullMenu()) as unknown as CategoryWithProducts[];
 
-  // 4. Mapear a la estructura de respuesta final (LCP < 1.2s)
+  // 5. Mapear a la respuesta final (inyectando el idioma resuelto)
   const menuCategories = fullMenu.map((cat) => ({
     id: cat.id,
     name: cat.name,
@@ -87,21 +102,18 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
       })),
   }));
 
-  // 5. Configuración de caché según Menu_Publico.md
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=3600");
 
-  // 6. Estructura de respuesta final estandarizada
   return c.json({
     organization: {
       id: org.id,
       name: org.businessName,
       logo: local.logo?.url || null,
-      theme: {
-        primary: "#1a2b3c",
-      },
+      theme: { primary: "#1a2b3c" },
     },
     menu: {
       categories: menuCategories,
+      language: resolvedLang, // Indicar al frontend qué idioma hemos resuelto
     },
   });
 });

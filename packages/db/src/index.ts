@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+export { createClient }; // Exportar para uso en tests o herramientas externas
 import { eq, and } from "drizzle-orm";
 import * as schema from "./schema";
 import { type AllergenMap } from "@rexeat/types";

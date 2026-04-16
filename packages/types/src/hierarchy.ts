@@ -17,11 +17,11 @@ export const LocalSchema = z.object({
 export type Local = z.infer<typeof LocalSchema>;
 
 export const ZoneSchema = z.object({
-  id: z.uuid(),
-  localId: z.uuid(),
+  id: z.string().uuid(),
+  localId: z.string().uuid(),
   organizationId: OrganizationIdSchema,
   name: z.string().min(1),
-  nfcToken: z.string().min(1), // El token ahora vive en la Zona (la tarjeta NFC)
+  slug: z.string().min(1), // Identificador semántico (ej: 'barra', 'terraza')
 });
 
 export type Zone = z.infer<typeof ZoneSchema>;
