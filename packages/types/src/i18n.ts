@@ -41,7 +41,10 @@ export const i18n = {
   },
 
   /**
-   * Obtiene la traducción más adecuada siguiendo una cadena de fallback inteligente.
+   * Obtiene la traducción siguiendo la jerarquía:
+   * 1. Idioma solicitado (ej: fr)
+   * 2. Inglés (en) - Fallback universal para extranjeros
+   * 3. Español (es) - Base mandatoria
    */
   get(
     ts: TranslatedString | undefined | null,
@@ -49,24 +52,17 @@ export const i18n = {
   ): string {
     if (!ts) return "No translation";
 
-    // 1. Idioma solicitado
+    // 1. Intentar el idioma solicitado
     const requested = ts[lang];
     if (requested && requested.trim().length > 0) return requested;
 
-    // 2. Inglés como lengua franca
-    const en = ts.en;
-    if (lang !== "en" && en && en.trim().length > 0) return en;
-
-    // 3. Español como base
-    const es = ts.es;
-    if (lang !== "es" && es && es.trim().length > 0) return es;
-
-    // 4. Cualquier otro idioma disponible
-    for (const key of Object.keys(ts) as (keyof TranslatedString)[]) {
-      const val = ts[key];
-      if (val && val.trim().length > 0) return val;
+    // 2. Si no es inglés, intentar inglés como fallback intermedio
+    if (lang !== "en") {
+      const en = ts.en;
+      if (en && en.trim().length > 0) return en;
     }
 
-    return "No translation";
+    // 3. Fallback final garantizado: Español
+    return ts.es || "No translation";
   },
 } as const;

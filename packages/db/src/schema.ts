@@ -205,6 +205,29 @@ export const languageRequests = sqliteTable(
   }),
 );
 
+export const apiUsageLogs = sqliteTable(
+  "api_usage_logs",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    service: text("service").$type<"openrouter" | "deepl" | "r2">().notNull(),
+    model: text("model"),
+    inputAmount: integer("input_amount").notNull(),
+    outputAmount: integer("output_amount"),
+    costEstimate: integer("cost_estimate").default(0), // En milicéntimos (1/1000 céntimo)
+    createdAt: integer("created_at", { mode: "timestamp" }).default(
+      sql`(strftime('%s', 'now'))`,
+    ),
+  },
+  (t) => ({
+    orgIdx: index("api_usage_org_idx").on(t.organizationId),
+  }),
+);
+
 export const productStockLogs = sqliteTable(
   "product_stock_logs",
   {

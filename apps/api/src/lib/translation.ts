@@ -4,39 +4,44 @@
  */
 import { type TranslatedString } from "@rexeat/types";
 
+export interface TranslationResult {
+  translations: TranslatedString[];
+  usage: {
+    characters: number;
+    costEstimate: number; // En milicéntimos
+    service: "deepl";
+  };
+}
+
 /**
  * Interfaz para servicios de traducción.
- * Sigue el principio de Inversión de Dependencia (DIP).
  */
 export interface ITranslationService {
-  translateBatch(texts: string[]): Promise<TranslatedString[]>;
+  translateBatch(texts: string[]): Promise<TranslationResult>;
 }
 
 export class TranslationService implements ITranslationService {
   private readonly apiUrl = "https://api-free.deepl.com/v2/translate";
+  private readonly PRICE_PER_CHARACTER_MILLICENTS = 0.02; // 20€ / 1M chars = 0.00002€ = 0.02 milicéntimos
 
   constructor(private readonly apiKey: string) {}
 
-  /**
-   * Traduce una lista de textos a todos los idiomas soportados por Rexeat.
-   * Optimiza el uso de la API enviando lotes de textos por idioma.
-   */
-  async translateBatch(texts: string[]): Promise<TranslatedString[]> {
-    if (texts.length === 0) return [];
+  async translateBatch(texts: string[]): Promise<TranslationResult> {
+    if (texts.length === 0) {
+      return {
+        translations: [],
+        usage: { characters: 0, costEstimate: 0, service: "deepl" },
+      };
+    }
 
     const targetLangs: TargetLanguage[] = ["en", "fr", "de", "nl", "it"];
+    let totalChars = 0;
 
-    // Inicializar resultados con el texto original en español
-    const results: TranslatedString[] = texts.map((text) => ({
-      es: text,
-      en: "",
-      fr: "",
-      de: "",
-      nl: "",
-      it: "",
-    }));
+    const results: TranslatedString[] = texts.map((text) => {
+      totalChars += text.length * targetLangs.length;
+      return { es: text, en: "", fr: "", de: "", nl: "", it: "" };
+    });
 
-    // Ejecutar traducciones por idioma en paralelo
     await Promise.all(
       targetLangs.map(async (lang) => {
         try {
@@ -47,12 +52,20 @@ export class TranslationService implements ITranslationService {
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error(`Error traduciendo a ${lang}:`, error);
-          // Mantenemos strings vacíos en caso de error para no romper la UI
         }
       }),
     );
 
-    return results;
+    return {
+      translations: results,
+      usage: {
+        characters: totalChars,
+        costEstimate: Math.ceil(
+          totalChars * this.PRICE_PER_CHARACTER_MILLICENTS,
+        ),
+        service: "deepl",
+      },
+    };
   }
 
   private async callDeepL(
