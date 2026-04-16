@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1029.0",

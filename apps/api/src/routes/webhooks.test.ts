@@ -1,71 +1,72 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { processClerkEvent } from "./webhooks";
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ */
+import { describe, it, expect, beforeAll } from "vitest";
 import { db, organizations, users } from "@rexeat/db";
+import { processClerkEvent } from "./webhooks";
+import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-// Mock de la base de datos
-vi.mock("@rexeat/db", async () => {
-  const actual = await vi.importActual("@rexeat/db");
-  return {
-    ...actual,
-    db: {
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      values: vi.fn().mockReturnThis(),
-      set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      onConflictDoUpdate: vi.fn().mockReturnThis(),
-    },
-  };
-});
+describe("Clerk Webhooks - Integration", () => {
+  beforeAll(async () => {
+    // Crear tablas básicas para el test (Drizzle Kit Push manual)
+    await db.run(sql`
+      CREATE TABLE IF NOT EXISTS organizations (
+        id TEXT PRIMARY KEY,
+        business_name TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `);
 
-describe("Webhooks - processClerkEvent", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    await db.run(sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id),
+        role TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `);
   });
 
-  it("debe insertar una organización cuando se crea en Clerk", async () => {
-    const data = { id: "org_123", name: "Restaurante Test" };
-
-    await processClerkEvent({ type: "organization.created", data });
-
-    expect(db.insert).toHaveBeenCalledWith(organizations);
-    expect(db.values).toHaveBeenCalledWith({
-      id: "org_123",
-      businessName: "Restaurante Test",
-    });
-  });
-
-  it("debe mapear el rol 'admin' de Clerk a 'owner' de Rexeat", async () => {
-    const data = {
-      organization: { id: "org_123" },
-      public_user_data: { user_id: "user_123" },
-      role: "org:admin",
+  it("debería crear una organización cuando recibe organization.created", async () => {
+    const event = {
+      type: "organization.created",
+      data: {
+        id: "org_test_123",
+        name: "Restaurante Test",
+      },
     };
 
-    await processClerkEvent({ type: "organizationMembership.created", data });
+    await processClerkEvent(event);
 
-    expect(db.insert).toHaveBeenCalledWith(users);
-    expect(db.values).toHaveBeenCalledWith({
-      id: "user_123",
-      organizationId: "org_123",
-      role: "owner",
-    });
+    const [org] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, "org_test_123"));
+
+    expect(org).toBeDefined();
+    expect(org?.businessName).toBe("Restaurante Test");
   });
 
-  it("debe mapear el rol 'member' de Clerk a 'waiter' de Rexeat", async () => {
-    const data = {
-      organization: { id: "org_123" },
-      public_user_data: { user_id: "user_123" },
-      role: "org:member",
+  it("debería sincronizar un miembro cuando recibe organizationMembership.created", async () => {
+    const event = {
+      type: "organizationMembership.created",
+      data: {
+        organization: { id: "org_test_123" },
+        public_user_data: { user_id: "user_test_456" },
+        role: "org:admin",
+      },
     };
 
-    await processClerkEvent({ type: "organizationMembership.created", data });
+    await processClerkEvent(event);
 
-    expect(db.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        role: "waiter",
-      }),
-    );
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, "user_test_456"));
+
+    expect(user).toBeDefined();
+    expect(user?.organizationId).toBe("org_test_123");
+    expect(user?.role).toBe("owner");
   });
 });

@@ -1,30 +1,23 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import {
   GoogleGenerativeAI,
   type GenerativeModel,
 } from "@google/generative-ai";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
-  type TranslatedString,
   type DigitizationItem,
   DigitizationResponseSchema,
 } from "@rexeat/types";
+import { TranslationService } from "./translation";
 
-// Tipado para DeepL
-interface DeepLTranslationResponse {
-  translations: Array<{
-    detected_source_language: string;
-    text: string;
-  }>;
-}
-
-/**
- * Cliente de IA para Rexeat.
- * Gestiona digitalización con Gemini, traducciones con DeepL y persistencia en R2.
- */
 export class AIClient {
   private genAI: GoogleGenerativeAI;
   private geminiModel: GenerativeModel;
   private s3Client: S3Client;
+  private translationService: TranslationService;
 
   constructor(
     private readonly config: {
@@ -49,21 +42,18 @@ export class AIClient {
         secretAccessKey: config.r2SecretAccessKey,
       },
     });
+
+    this.translationService = new TranslationService(config.deeplApiKey);
   }
 
-  /**
-   * Digitaliza una imagen de menú físico usando Gemini y la persiste en R2.
-   */
   async digitizeMenu(
     imageBuffer: ArrayBuffer,
     mimeType: string,
     organizationId: string,
   ): Promise<DigitizationItem[]> {
     const requestId = crypto.randomUUID();
-    const fileExtension = mimeType.split("/")[1] || "jpg";
-    const fileName = `${organizationId}/uploads/${requestId}.${fileExtension}`;
+    const fileName = `${organizationId}/uploads/${requestId}.${mimeType.split("/")[1] || "jpg"}`;
 
-    // 1. Persistencia en R2 (Auditoría y almacenamiento)
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: this.config.r2BucketName,
@@ -73,8 +63,29 @@ export class AIClient {
       }),
     );
 
-    // 2. Procesamiento con Gemini
-    const prompt = `
+    const prompt = this.getDigitizationPrompt();
+    const base64Image = this.toBase64(imageBuffer);
+
+    const result = await this.geminiModel.generateContent([
+      prompt,
+      { inlineData: { data: base64Image, mimeType } },
+    ]);
+
+    const response = await result.response;
+    const items = await this.parseGeminiResponse(response.text(), requestId);
+
+    const translatedNames = await this.translationService.translateBatch(
+      items.map((item) => String(item.name)),
+    );
+
+    return items.map((item, index) => ({
+      ...item,
+      name: translatedNames[index] || { es: String(item.name) },
+    }));
+  }
+
+  private getDigitizationPrompt(): string {
+    return `
       Analiza esta imagen de un menú de restaurante.
       Extrae todos los platos, bebidas y productos con sus precios.
       Devuelve un objeto JSON con una lista llamada "items" donde cada objeto tenga:
@@ -88,98 +99,35 @@ export class AIClient {
       2. Si no hay precio claro, usa 0.
       3. Devuelve SOLO JSON puro, sin markdown.
     `;
+  }
 
-    const base64Data = btoa(
-      new Uint8Array(imageBuffer).reduce(
+  private toBase64(buffer: ArrayBuffer): string {
+    return btoa(
+      new Uint8Array(buffer).reduce(
         (data, byte) => data + String.fromCharCode(byte),
         "",
       ),
     );
+  }
 
-    const result = await this.geminiModel.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType,
-        },
-      },
-    ]);
-
-    const response = await result.response;
-    const text = response.text();
-
+  private async parseGeminiResponse(
+    text: string,
+    requestId: string,
+  ): Promise<DigitizationItem[]> {
     try {
       const cleanJson = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(cleanJson);
-
       const validated = DigitizationResponseSchema.parse({
         items: parsed.items,
         requestId,
       });
-
       return validated.items;
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Error al procesar Gemini:", e);
       throw new Error(
-        `No se pudo procesar la imagen del menú: ${e instanceof Error ? e.message : String(e)}`,
+        `Failed to parse menu: ${e instanceof Error ? e.message : String(e)}`,
         { cause: e },
       );
     }
-  }
-
-  async translateText(
-    text: string,
-    _sourceLang: string = "es",
-  ): Promise<TranslatedString> {
-    const targetLangs = ["en", "fr", "de", "nl", "it"] as const;
-    const result: TranslatedString = {
-      es: text,
-      en: "",
-      fr: "",
-      de: "",
-      nl: "",
-      it: "",
-    };
-
-    await Promise.all(
-      targetLangs.map(async (lang) => {
-        try {
-          const translated = await this.callDeepL(text, lang.toUpperCase());
-          result[lang] = translated;
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn(`Error DeepL (${lang}):`, e);
-          result[lang] = "";
-        }
-      }),
-    );
-
-    return result;
-  }
-
-  private async callDeepL(text: string, targetLang: string): Promise<string> {
-    const url = `https://api-free.deepl.com/v2/translate`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `DeepL-Auth-Key ${this.config.deeplApiKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        text,
-        target_lang: targetLang === "EN" ? "EN-US" : targetLang,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`DeepL error: ${response.statusText}`);
-    }
-
-    const data = (await response.json()) as DeepLTranslationResponse;
-    return data.translations[0]?.text || "";
   }
 }
 
@@ -192,9 +140,6 @@ interface AIClientConfig {
   r2BucketName: string;
 }
 
-/**
- * Factory para obtener una instancia configurada de AIClient.
- */
 export function getAIClient() {
   const config = {
     geminiApiKey: process.env["GEMINI_API_KEY"],
