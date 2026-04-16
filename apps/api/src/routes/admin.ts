@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { type AvailabilityStatus } from "@rexeat/db";
+import { TranslatedStringSchema } from "@rexeat/types";
 import { requireOrgAuth } from "../middleware/auth";
 import { withTenantRepo } from "../middleware/db";
 import type { HonoEnv } from "../index";
@@ -38,10 +39,10 @@ const stockSchema = z.object({
  * Esquema de validación para creación/actualización de productos.
  */
 const productSchema = z.object({
-  name: z.record(z.string()),
-  description: z.record(z.string()).optional(),
+  name: TranslatedStringSchema,
+  description: TranslatedStringSchema.optional(),
   price: z.number().int().nonnegative(),
-  allergens: z.record(z.boolean()),
+  allergens: z.record(z.string(), z.boolean()),
   status: z.enum([
     "in_stock",
     "out_of_stock",
@@ -69,7 +70,7 @@ adminStock.patch(
       productId,
       userId,
       newStatus: status as AvailabilityStatus,
-      reason,
+      ...(reason ? { reason } : {}),
     });
 
     // Notificación en tiempo real via Pusher

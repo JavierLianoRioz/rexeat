@@ -6,7 +6,9 @@ import nextPlugin from "@next/eslint-plugin-next";
 import prettierConfig from "eslint-config-prettier";
 import globals from "globals";
 
+/** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config(
+  // 1. Base JS & TS Config
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettierConfig,
@@ -19,14 +21,8 @@ export default tseslint.config(
     },
     plugins: {
       turbo: turboPlugin,
-      "react-hooks": reactHooksPlugin,
-      "@next/next": nextPlugin,
     },
     rules: {
-      ...reactHooksPlugin.configs.recommended.rules,
-      ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs["core-web-vitals"].rules,
-      "@next/next/no-html-link-for-pages": "off",
       "turbo/no-undeclared-env-vars": "error",
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -40,7 +36,33 @@ export default tseslint.config(
       "no-debugger": "error",
     },
   },
+
+  // 2. React Hooks (Any React package/app)
   {
-    ignores: [".next/**", "dist/**", "node_modules/**", ".turbo/**"],
+    files: ["apps/web/**/*.{ts,tsx}", "apps/mobile/**/*.{ts,tsx}", "packages/ui/**/*.{ts,tsx}"],
+    plugins: {
+      "react-hooks": reactHooksPlugin,
+    },
+    rules: {
+      ...reactHooksPlugin.configs.recommended.rules,
+    },
+  },
+
+  // 3. Next.js Specific (Only Web App)
+  {
+    files: ["apps/web/**/*.{ts,tsx}"],
+    plugins: {
+      "@next/next": nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
+
+  // 4. Global Ignores
+  {
+    ignores: [".next/**", "dist/**", "node_modules/**", ".turbo/**", "build/**"],
   }
 );
