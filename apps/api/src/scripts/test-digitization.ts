@@ -43,7 +43,7 @@ async function main() {
 
     result.items.forEach((item, index) => {
       console.log(
-        `${index + 1}. ${item.name.es} (${(item.price / 100).toFixed(2)}€)`,
+        `${index + 1}. ${item.name.es} (${(item.parsedPrice / 100).toFixed(2)}€)`,
       );
       console.log(`   🇺🇸 EN: ${item.name.en}`);
       console.log(`   🇫🇷 FR: ${item.name.fr}`);
