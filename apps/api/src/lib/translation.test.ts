@@ -26,15 +26,16 @@ describe("TranslationService - Unit Tests (TDD)", () => {
       json: async () => mockResponse,
     } as Response);
 
-    const results = await service.translateBatch(texts);
+    const result = await service.translateBatch(texts);
 
     // Verificar que se llamó a la API con los parámetros correctos (Batching)
-    expect(fetch).toHaveBeenCalledTimes(5); // Una vez por cada idioma de destino (en, fr, de, nl, it)
+    expect(fetch).toHaveBeenCalledTimes(5); // Una vez por cada idioma de destino
 
     // Verificar estructura del primer resultado (Inglés)
-    expect(results[0]?.es).toBe("Hola");
-    expect(results[0]?.en).toBe("Hello");
-    expect(results[1]?.en).toBe("World");
+    expect(result.translations[0]?.es).toBe("Hola");
+    expect(result.translations[0]?.en).toBe("Hello");
+    expect(result.translations[1]?.en).toBe("World");
+    expect(result.usage.costEstimate).toBeGreaterThan(0);
   });
 
   it("debería manejar errores de red graciosamente (Resiliencia)", async () => {
@@ -44,9 +45,9 @@ describe("TranslationService - Unit Tests (TDD)", () => {
       text: async () => "DeepL Error",
     } as Response);
 
-    const results = await service.translateBatch(["Error"]);
+    const result = await service.translateBatch(["Error"]);
 
-    expect(results[0]?.es).toBe("Error");
-    expect(results[0]?.en).toBe(""); // Fallback a vacío
+    expect(result.translations[0]?.es).toBe("Error");
+    expect(result.translations[0]?.en).toBe(""); // Fallback a vacío
   });
 });
