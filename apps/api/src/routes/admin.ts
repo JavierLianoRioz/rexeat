@@ -1,3 +1,7 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
+ */
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
@@ -44,11 +48,12 @@ const productSchema = z.object({
     "hidden",
     "temporarily_unavailable",
   ]),
+  image: z.any().optional(),
 });
 
 /**
  * PATCH /admin/stock/:productId
- * Actualiza el estado de disponibilidad de un producto.
+ * Actualiza el estado de disponibilidad de un producto con log de auditoría.
  */
 adminStock.patch(
   "/stock/:productId",

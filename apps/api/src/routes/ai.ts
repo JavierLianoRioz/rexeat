@@ -61,28 +61,26 @@ const translateSchema = z.object({
   sourceLang: z.string().optional().default("es"),
 });
 
-aiRoutes.post(
-  "/translate",
-  zValidator("json", translateSchema),
-  async (c: Context<HonoEnv>) => {
-    const { text, sourceLang } = c.req.valid("json");
+aiRoutes.post("/translate", zValidator("json", translateSchema), async (c) => {
+  const { text, sourceLang } = c.req.valid("json" as never) as {
+    text: string;
+    sourceLang?: string;
+  };
 
-    try {
-      const aiClient = getAIClient();
-      const translated = await aiClient.translateText(text, sourceLang);
-      return c.json({ success: true, data: translated });
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Error de traducción";
-      return c.json(
-        {
-          error: {
-            code: "AI_ERROR",
-            message,
-          },
+  try {
+    const aiClient = getAIClient();
+    const translated = await aiClient.translateText(text, sourceLang);
+    return c.json({ success: true, data: translated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Error de traducción";
+    return c.json(
+      {
+        error: {
+          code: "AI_ERROR",
+          message,
         },
-        500,
-      );
-    }
-  },
-);
+      },
+      500,
+    );
+  }
+});

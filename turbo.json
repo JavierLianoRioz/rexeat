@@ -1,7 +1,37 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"],
-  "globalPassThroughEnv": ["TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"],
+  "globalEnv": [
+    "TURSO_DATABASE_URL",
+    "TURSO_AUTH_TOKEN",
+    "GEMINI_API_KEY",
+    "DEEPL_API_KEY",
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET_NAME",
+    "PUSHER_APP_ID",
+    "PUSHER_KEY",
+    "PUSHER_SECRET",
+    "PUSHER_CLUSTER",
+    "CLERK_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "CLERK_SECRET_KEY"
+  ],
+  "globalPassThroughEnv": [
+    "TURSO_DATABASE_URL",
+    "TURSO_AUTH_TOKEN",
+    "GEMINI_API_KEY",
+    "DEEPL_API_KEY",
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET_NAME",
+    "PUSHER_APP_ID",
+    "PUSHER_KEY",
+    "PUSHER_SECRET",
+    "PUSHER_CLUSTER",
+    "CLERK_WEBHOOK_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

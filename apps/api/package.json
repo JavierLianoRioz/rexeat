@@ -23,6 +23,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@rexeat/eslint-config": "workspace:*",
+    "@rexeat/tsconfig": "workspace:*",
     "@types/node": "^20.19.39",
     "dotenv": "^17.4.2",
     "tsx": "^4.21.0",

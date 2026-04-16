@@ -122,7 +122,10 @@ export class AIClient {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("Error al procesar Gemini:", e);
-      throw new Error("No se pudo procesar la imagen del menú", { cause: e });
+      throw new Error(
+        `No se pudo procesar la imagen del menú: ${e instanceof Error ? e.message : String(e)}`,
+        { cause: e },
+      );
     }
   }
 
