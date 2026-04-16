@@ -48,6 +48,7 @@ describe("TenantRepository - Cumplimiento Legal (EU 1169/2011)", () => {
       id: PROD_ID,
       organizationId: MY_ORG,
       name: { es: "Plato de Prueba" },
+      price: 1000,
       allergens: {},
       allergensConfirmed: false,
     });
@@ -60,8 +61,8 @@ describe("TenantRepository - Cumplimiento Legal (EU 1169/2011)", () => {
     const result = await repo.confirmAllergens(PROD_ID, allergens);
 
     expect(result.allergensConfirmed).toBe(true);
-    expect(result.allergens.gluten).toBe(true);
-    expect(result.allergens.milk).toBe(false);
+    expect(result.allergens["gluten"]).toBe(true);
+    expect(result.allergens["milk"]).toBe(false);
   });
 
   it("NO debería permitir confirmar un producto que no pertenece a la organización", async () => {

@@ -4,6 +4,15 @@
  */
 import { type TranslatedString } from "@rexeat/types";
 
+export type TargetLanguage = Exclude<keyof TranslatedString, "es">;
+
+interface DeepLTranslationResponse {
+  translations: Array<{
+    detected_source_language: string;
+    text: string;
+  }>;
+}
+
 export interface TranslationResult {
   translations: TranslatedString[];
   usage: {

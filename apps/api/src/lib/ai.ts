@@ -108,11 +108,14 @@ export class AIClient {
       throw new Error(`OpenRouter Error (${response.status}): ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
+
     const aiText = data.choices?.[0]?.message?.content;
     const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
 
-    // Calcular coste de IA
     const aiCost = Math.ceil(
       (usage.prompt_tokens * this.PRICE_PER_1M_INPUT_TOKENS) / 1000 +
         (usage.completion_tokens * this.PRICE_PER_1M_OUTPUT_TOKENS) / 1000,
@@ -122,15 +125,13 @@ export class AIClient {
 
     const items = await this.parseAIResponse(aiText, requestId);
 
-    // 3. Traducción automática en bloque (DeepL)
     const translationResult = await this.translationService.translateBatch(
-      items.map((item) => String(item.name)),
+      items.map((item) => String(item.name.es)),
     );
 
     const finalItems = items.map((item, index) => ({
       ...item,
-      price: item.parsedPrice || 0, // Inyectar el precio parseado
-      name: translationResult.translations[index] || { es: String(item.name) },
+      name: translationResult.translations[index] || item.name,
     }));
 
     return {
@@ -159,9 +160,9 @@ export class AIClient {
       Para cada ítem, identifica:
       1. Nombre descriptivo completo (reconstruido con su sección si es necesario).
       2. Precio: Busca números a la derecha del nombre o debajo. Ignora números de alérgenos.
-
+      
       Devuelve un objeto JSON con una lista llamada "items" donde cada objeto sea:
-      - "name": Nombre completo y descriptivo del producto.
+      - "name": Nombre completo y descriptivo del producto en español.
       - "originalPriceText": El texto tal cual aparece (ej: "12,50", "9.00€").
       - "parsedPrice": El valor en CÉNTIMOS (ej: 1250). Si no hay precio, usa 0.
       - "confidence": Nivel de confianza (0.0 a 1.0).
@@ -186,9 +187,14 @@ export class AIClient {
     requestId: string,
   ): Promise<DigitizationItem[]> {
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(text) as {
+        items: Array<{ name: string; [key: string]: unknown }>;
+      };
       const validated = DigitizationResponseSchema.parse({
-        items: parsed.items,
+        items: parsed.items.map((item) => ({
+          ...item,
+          name: { es: String(item.name) },
+        })),
         requestId,
       });
       return validated.items;
