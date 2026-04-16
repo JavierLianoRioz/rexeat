@@ -181,6 +181,30 @@ export const productsToCategories = sqliteTable(
 
 // --- Auditoría y Stock ---
 
+export const languageRequests = sqliteTable(
+  "language_requests",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    localId: text("local_id")
+      .notNull()
+      .references(() => locals.id),
+    langCode: text("lang_code").notNull(), // El código original (ej: 'es-MX', 'ru')
+    resolvedLang: text("resolved_lang").notNull(), // El idioma que finalmente se mostró (ej: 'es', 'en')
+    createdAt: integer("created_at", { mode: "timestamp" }).default(
+      sql`(strftime('%s', 'now'))`,
+    ),
+  },
+  (t) => ({
+    orgIdx: index("lang_req_org_idx").on(t.organizationId),
+    localIdx: index("lang_req_local_idx").on(t.localId),
+  }),
+);
+
 export const productStockLogs = sqliteTable(
   "product_stock_logs",
   {

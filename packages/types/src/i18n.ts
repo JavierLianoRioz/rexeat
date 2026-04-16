@@ -22,12 +22,26 @@ export type TranslatedString = z.infer<typeof TranslatedStringSchema>;
 
 export const i18n = {
   /**
-   * Obtiene la traducción más adecuada siguiendo una cadena de fallback inteligente:
-   * 1. Idioma solicitado
-   * 2. Inglés (en) - Como lengua franca
-   * 3. Español (es) - Como base mandatoria
-   * 4. Primer idioma que tenga contenido
-   * 5. Fallback final ("No translation")
+   * Resuelve el idioma final basado en reglas de negocio:
+   * - Castellano/Latino (es-*) -> 'es'
+   * - Otros no soportados -> 'en' -> 'es'
+   */
+  resolve(requested: string): Language {
+    const lang = requested.toLowerCase().split("-")[0];
+
+    // 1. Idiomas Latinos / Castellanos
+    if (lang === "es") return "es";
+
+    // 2. Idiomas soportados directamente
+    const supported: Language[] = ["fr", "en", "de", "nl", "it"];
+    if (supported.includes(lang as Language)) return lang as Language;
+
+    // 3. Fallback no-castellano: Inglés -> Español
+    return "en";
+  },
+
+  /**
+   * Obtiene la traducción más adecuada siguiendo una cadena de fallback inteligente.
    */
   get(
     ts: TranslatedString | undefined | null,

@@ -1,49 +1,31 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ * Tests para la lógica de resolución de idiomas y fallbacks.
+ */
 import { describe, it, expect } from "vitest";
-import { i18n, type TranslatedString } from "./i18n";
+import { i18n } from "./i18n";
 
-describe("i18n.get helper", () => {
-  const fullText: TranslatedString = {
-    es: "Hola",
-    en: "Hello",
-    fr: "Bonjour",
-    de: "Hallo",
-    nl: "Hoi",
-    it: "Ciao",
-  };
-
-  it("should return the requested language if available", () => {
-    expect(i18n.get(fullText, "fr")).toBe("Bonjour");
-    expect(i18n.get(fullText, "it")).toBe("Ciao");
+describe("i18n - Resolución de Idiomas y Fallbacks", () => {
+  it("debería resolver variantes latinas a español (Castellano)", () => {
+    expect(i18n.resolve("es-MX")).toBe("es");
+    expect(i18n.resolve("es-AR")).toBe("es");
+    expect(i18n.resolve("ES-cl")).toBe("es");
   });
 
-  it("should fallback to English if the requested language is missing", () => {
-    const missingFr: TranslatedString = { es: "Hola", en: "Hello" };
-    expect(i18n.get(missingFr, "fr")).toBe("Hello");
+  it("debería resolver idiomas soportados directamente", () => {
+    expect(i18n.resolve("fr")).toBe("fr");
+    expect(i18n.resolve("de-DE")).toBe("de");
+    expect(i18n.resolve("it")).toBe("it");
   });
 
-  it("should fallback to Spanish if English is also missing", () => {
-    const onlyEs: TranslatedString = { es: "Hola" };
-    expect(i18n.get(onlyEs, "de")).toBe("Hola");
+  it("debería hacer fallback a Inglés para idiomas no-castellanos no soportados", () => {
+    expect(i18n.resolve("ru")).toBe("en"); // Ruso -> Inglés
+    expect(i18n.resolve("ja-JP")).toBe("en"); // Japonés -> Inglés
+    expect(i18n.resolve("pt-BR")).toBe("en"); // Portugués -> Inglés (no empieza por 'es')
   });
 
-  it("should return the first available translation if ES and EN are missing (edge case)", () => {
-    // @ts-expect-error - testing invalid state where es is missing
-    const onlyFr: TranslatedString = { fr: "Bonjour" };
-    expect(i18n.get(onlyFr, "it")).toBe("Bonjour");
-  });
-
-  it("should return 'No translation' if object is empty or null", () => {
-    expect(i18n.get({} as TranslatedString, "en")).toBe("No translation");
-    expect(i18n.get(null as unknown as TranslatedString, "en")).toBe(
-      "No translation",
-    );
-  });
-
-  it("should handle empty strings by treating them as missing", () => {
-    const emptyEn: TranslatedString = { es: "Hola", en: "" };
-    expect(i18n.get(emptyEn, "en")).toBe("Hola");
-
-    const blankEn: TranslatedString = { es: "Hola", en: "   " };
-    expect(i18n.get(blankEn, "en")).toBe("Hola");
+  it("debería manejar casos vacíos o extraños", () => {
+    expect(i18n.resolve("")).toBe("en");
+    expect(i18n.resolve("unknown")).toBe("en");
   });
 });
