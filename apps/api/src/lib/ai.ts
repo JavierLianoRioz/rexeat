@@ -150,19 +150,24 @@ export class AIClient {
       Eres un experto en digitalización de menús de restaurantes. 
       Analiza la imagen adjunta y extrae todos los productos, platos y bebidas.
 
-      Para cada ítem, identifica:
-      1. Nombre exacto en español.
-      2. Precio: Busca números a la derecha del nombre o debajo. Ignora números que parezcan ser de alérgenos (ej: del 1 al 14).
-      
-      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto sea:
-      - "name": Nombre del producto.
-      - "originalPriceText": El texto tal cual aparece (ej: "12,50", "9.00€", "15-").
-      - "parsedPrice": El valor convertido a un número entero en CÉNTIMOS (ej: 12.50€ -> 1250). Si no hay precio, usa 0.
-      - "confidence": Nivel de confianza de la extracción (0.0 a 1.0).
+      ### REGLA DE ORO DE CONTEXTO (CRÍTICA):
+      Los menús suelen estar organizados por secciones (ej: "TOSTADAS", "TACOS", "ENTRANTES"). 
+      Si un producto está bajo una sección y su nombre es incompleto (ej: "de Atún", "de Pollo"), DEBES reconstruir el nombre completo usando el contexto de la sección.
+      - Ejemplo: Sección "TOSTADAS" + Producto "de Atún" => Nombre: "Tostada de Atún".
+      - Ejemplo: Sección "TACOS" + Producto "Pastor" => Nombre: "Taco al Pastor".
 
-      Reglas Críticas:
-      - NO inventes datos. Si no estás seguro de un precio, pon 0 en "parsedPrice".
-      - Procesa TODA la imagen, no te detengas a la mitad.
+      Para cada ítem, identifica:
+      1. Nombre descriptivo completo (reconstruido con su sección si es necesario).
+      2. Precio: Busca números a la derecha del nombre o debajo. Ignora números de alérgenos.
+
+      Devuelve un objeto JSON con una lista llamada "items" donde cada objeto sea:
+      - "name": Nombre completo y descriptivo del producto.
+      - "originalPriceText": El texto tal cual aparece (ej: "12,50", "9.00€").
+      - "parsedPrice": El valor en CÉNTIMOS (ej: 1250). Si no hay precio, usa 0.
+      - "confidence": Nivel de confianza (0.0 a 1.0).
+
+      Reglas Adicionales:
+      - NO inventes datos.
       - Devuelve exclusivamente JSON puro sin etiquetas de markdown.
     `;
   }
