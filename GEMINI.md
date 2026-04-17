@@ -10,7 +10,7 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 
 - **NFC-First Access:** Customers scan an NFC tag or QR code at their table to open the menu instantly.
 - **Dynamic Allergen Filtering:** Provides active visual filtering for food intolerances based on **manual input** from the restaurant (EU 1169/2011 compliant interface).
-- **AI-Driven Digitization:** Uses Google Gemini to digitize paper menu names and prices; algergen data is strictly manual-only.
+- **AI-Driven Digitization:** Uses OpenRouter to digitize paper menu names and prices; algergen data is strictly manual-only.
 - **Real-Time Stock Management:** Managers can mark items as "Out of Stock" instantly across all customer devices.
 
 ## Technical Stack & Architecture
