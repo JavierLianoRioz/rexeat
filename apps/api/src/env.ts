@@ -16,7 +16,7 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().min(1),
 
   // AI
-  GEMINI_API_KEY: z.string().min(1),
+  OPENROUTER_API_KEY: z.string().min(1),
   DEEPL_API_KEY: z.string().min(1).optional(),
 
   // Realtime
@@ -26,7 +26,9 @@ const envSchema = z.object({
   PUSHER_CLUSTER: z.string().default("eu"),
 
   // App
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   ALLOWED_ORIGINS: z.string().optional(),
 });
 
