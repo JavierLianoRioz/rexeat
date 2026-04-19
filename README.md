@@ -34,11 +34,6 @@ Para verificar que todas tus API Keys (Turso, DeepL, Gemini, R2) están correcta
 pnpm --filter @rexeat/db health-check
 ```
 
-### Estrategia de DX y Worktrees
-
-Para trabajar en tareas paralelas sin conflictos:
-`git worktree add ../rexeat-task-name feat/branch-name`
-
 ## ⚖️ Licencia
 
 Este proyecto es de **fuente disponible**. El código es público para fomentar la transparencia y la detección de errores, pero su uso comercial está estrictamente prohibido para cualquier entidad ajena a **Rexeat S.L.** bajo la licencia [Polyform Non-Commercial 1.0.0](https://polyformproject.org/licenses/non-commercial/1.0.0/).
