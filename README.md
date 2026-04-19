@@ -8,7 +8,7 @@ Bienvenido a la arquitectura central de **Rexeat**, un sistema de menú digital 
 
 - **`web/`**: Menú digital del cliente (Next.js + React Native Web). SSR/ISR con objetivo LCP < 1.2s.
 - **`mobile/`**: App de gestión nativa para el local (Expo/React Native).
-- **`api/`**: Endpoints de IA (Gemini/DeepL) y autenticación (Clerk). Vercel Edge Runtime.
+- **`api/`**: Endpoints de IA (OpenRouter/DeepL) y autenticación (Clerk). Vercel Edge Runtime.
 
 ### 📦 Paquetes Compartidos (`packages/`)
 
