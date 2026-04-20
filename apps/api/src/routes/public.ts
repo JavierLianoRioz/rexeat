@@ -71,14 +71,24 @@ publicMenu.get("/menu/:slug", async (c: Context) => {
   }
 
   // 3. Registro de Analítica de Idiomas (Background Task)
-  c.executionCtx.waitUntil(
-    db.insert(languageRequests).values({
-      organizationId: org.id,
-      localId: local.id,
-      langCode: requestedLang.substring(0, 50), // Limitar longitud por seguridad
-      resolvedLang,
-    }),
-  );
+  const logPromise = db.insert(languageRequests).values({
+    organizationId: org.id,
+    localId: local.id,
+    langCode: requestedLang.substring(0, 50),
+    resolvedLang,
+  });
+
+  // Hono 4.x: accessing c.executionCtx getter throws if not available
+  try {
+    if (c.executionCtx) {
+      c.executionCtx.waitUntil(logPromise);
+    } else {
+      logPromise.catch(console.error);
+    }
+  } catch {
+    // Fallback for Node.js/Bun where executionCtx getter fails
+    logPromise.catch(console.error);
+  }
 
   // 4. Obtener Menú completo optimizado
   const repo = createTenantRepository(org.id as OrganizationId);
