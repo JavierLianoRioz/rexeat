@@ -17,12 +17,22 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 
 - **Frontend:** React Native (Monorepo using Turborepo) for both Web and Mobile (iOS/Android) platforms.
 - **Backend:** Node.js running on Vercel Edge Runtime.
-- **Database:** Multi-tenant Shared Schema (Row-Level Security) using Turso (Drizzle ORM).
+- **Database:** Multi-tenant SQLite silos using Turso (Drizzle ORM).
 - **Storage:** Cloudflare R2 for high-performance, low-cost image hosting.
 - **Authentication:** Clerk (with a focus on Passkeys/Biometric login for managers).
 - **Security:** Cloudflare Bot Fight Mode and Vercel Firewall to protect against scraping.
 
-## Key Documentation Files (Atomic Vault v2.0)
+## [TEMP] Session Handoff (2026-04-20)
+
+- **MCP Setup:** Configured `filesystem`, `playwright`, `context7`, `sequential-thinking`.
+- **Status:** All servers added. Playwright chromium + ffmpeg installed.
+- **Pending:**
+  1. Verify connection to `playwright`, `context7`, `sequential-thinking` (disconnected during setup).
+  2. Setup Context7 API key if needed.
+  3. Start task execution using new MCP tools.
+- **Caveman Mode:** Active.
+
+## Key Documentation Files
 
 The documentation is organized into 5 specialized pillars within `docs/internal/`:
 
