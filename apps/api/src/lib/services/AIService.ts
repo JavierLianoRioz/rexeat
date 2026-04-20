@@ -14,17 +14,24 @@ import { TranslationService } from "../translation";
 export class AIService {
   constructor(
     private readonly orgId: string,
-    private readonly repo: ITenantRepository
+    private readonly repo: ITenantRepository,
   ) {}
 
   /**
    * Ejecuta el flujo completo de digitalización y audita el consumo.
    */
-  async digitizeMenu(imageBuffer: ArrayBuffer, mimeType: string): Promise<DigitizationResult> {
+  async digitizeMenu(
+    imageBuffer: ArrayBuffer,
+    mimeType: string,
+  ): Promise<DigitizationResult> {
     const aiClient = getAIClient();
 
     // 1. Llamada a la Entidad Externa (IA)
-    const result = await aiClient.digitizeMenu(imageBuffer, mimeType, this.orgId);
+    const result = await aiClient.digitizeMenu(
+      imageBuffer,
+      mimeType,
+      this.orgId,
+    );
 
     // 2. Orquestación de Auditoría vía Repositorio (Clean Architecture)
     await this.repo.logUsage([
@@ -38,14 +45,6 @@ export class AIService {
       {
         service: "deepl",
         model: "deepl-v2",
-        inputAmount: 0,
-        costEstimate: result.usage.translationCostMillicents,
-      }
-    ]);
-
-    return result;
-  }
-
         inputAmount: 0,
         costEstimate: result.usage.translationCostMillicents,
       },
