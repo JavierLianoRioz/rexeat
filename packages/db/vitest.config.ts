@@ -2,14 +2,11 @@
  * © 2026 Rexeat - Todos los derechos reservados.
  */
 import { defineConfig } from "vitest/config";
-import path from "path";
 
 export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/src/scripts/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -19,13 +16,8 @@ export default defineConfig({
         branches: 80,
         statements: 80,
       },
-      include: ["src/lib/services/**", "src/routes/**"],
-      exclude: ["src/test/**", "src/index.ts"],
-    },
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+      include: ["src/index.ts", "src/schema.ts"],
+      exclude: ["src/test-*.ts", "src/seed.ts"],
     },
   },
 });

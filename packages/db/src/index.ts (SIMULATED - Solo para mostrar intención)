@@ -1,0 +1,23 @@
+/**
+ * © 2026 Rexeat - Todos los derechos reservados.
+ */
+import * as schema from "./schema";
+import { type AllergenMap } from "@rexeat/types";
+
+/**
+ * DIP: Interfaz Abstracta del Repositorio de Inquilino.
+ * La capa de Control (Services) solo conoce esta interfaz.
+ */
+export interface ITenantRepository {
+  getInfo(): Promise<any>;
+  getProducts(): Promise<any[]>;
+  getProduct(id: string): Promise<any>;
+  updateProduct(id: string, data: any): Promise<any>;
+  deleteProduct(id: string): Promise<any>;
+  createProduct(data: any): Promise<any>;
+  updateProductStatusWithLog(params: any): Promise<any>;
+  getFullMenu(): Promise<any>;
+  confirmAllergens(id: string, allergens: AllergenMap): Promise<any>;
+}
+
+// ... (Resto del archivo se mantiene igual, pero TenantRepository ahora implementa ITenantRepository)

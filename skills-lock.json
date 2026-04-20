@@ -91,6 +91,11 @@
       "sourceType": "github",
       "computedHash": "eca09a97f4e63ce21880ab0e8241578fbf5a5fd19cf505cfebe93f5a94e453ca"
     },
+    "senior-pm": {
+      "source": "borghei/claude-skills",
+      "sourceType": "github",
+      "computedHash": "ae7905708ad35f2fb4f061be040f5fed212bc30b02cdfb22210ce91d2bcd7cea"
+    },
     "senior-prompt-engineer": {
       "source": "davila7/claude-code-templates",
       "sourceType": "github",
