@@ -17,7 +17,7 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 
 - **Frontend:** React Native (Monorepo using Turborepo) for both Web and Mobile (iOS/Android) platforms.
 - **Backend:** Node.js running on Vercel Edge Runtime.
-- **Database:** Multi-tenant SQLite silos using Turso (Drizzle ORM).
+- **Database:** Multi-tenant Shared Schema (Row-Level Security) using Turso (Drizzle ORM).
 - **Storage:** Cloudflare R2 for high-performance, low-cost image hosting.
 - **Authentication:** Clerk (with a focus on Passkeys/Biometric login for managers).
 - **Security:** Cloudflare Bot Fight Mode and Vercel Firewall to protect against scraping.
