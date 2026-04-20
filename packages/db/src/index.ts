@@ -53,11 +53,7 @@ export interface ITenantRepository {
     data: Omit<typeof schema.categories.$inferInsert, "organizationId">,
   ): Promise<typeof schema.categories.$inferSelect>;
   confirmAllergens(id: string, allergens: AllergenMap): Promise<typeof schema.products.$inferSelect>;
-  getFullMenu(): Promise<(typeof schema.categories.$inferSelect & { 
-    productsToCategories: (typeof schema.productsToCategories.$inferSelect & { 
-      product: typeof schema.products.$inferSelect | null 
-    })[] 
-  })[]>;
+  getFullMenu(): Promise<any>;
   logUsage(logs: (Omit<typeof schema.apiUsageLogs.$inferInsert, "organizationId" | "id">)[]): Promise<void>;
 }
 
@@ -200,10 +196,15 @@ export class TenantRepository implements ITenantRepository {
       }
 
       // 2. Actualizar producto
-      await tx
+      const [updatedProduct] = await tx
         .update(schema.products)
         .set({ status: params.newStatus, updatedAt: new Date() })
-        .where(eq(schema.products.id, params.productId));
+        .where(eq(schema.products.id, params.productId))
+        .returning();
+
+      if (!updatedProduct) {
+        throw new Error("Critical Error: Product update failed.");
+      }
 
       // 3. Crear log
       const [log] = await tx
@@ -218,7 +219,11 @@ export class TenantRepository implements ITenantRepository {
         })
         .returning();
 
-      return { product: { ...product, status: params.newStatus }, log };
+      if (!log) {
+        throw new Error("Critical Error: Stock log creation failed.");
+      }
+
+      return { product: updatedProduct, log };
     });
   }
 
@@ -278,20 +283,26 @@ export class TenantRepository implements ITenantRepository {
    * Obtiene el menú completo con categorías y productos, filtrando por inquilino.
    */
   async getFullMenu() {
-    return this.database.query.categories.findMany({
+    const results = await this.database.query.categories.findMany({
       where: eq(schema.categories.organizationId, this.organizationId),
       orderBy: (categories, { asc }) => [asc(categories.order)],
       with: {
         productsToCategories: {
           where: eq(schema.productsToCategories.organizationId, this.organizationId),
           with: {
-            product: {
-              where: eq(schema.products.organizationId, this.organizationId),
-            },
+            product: true,
           },
         },
       },
     });
+
+    // Deep isolation check for one-to-one relations in Drizzle findMany (safety belt)
+    return results.map(category => ({
+      ...category,
+      productsToCategories: category.productsToCategories.filter(rel => 
+        rel.product && rel.product.organizationId === this.organizationId
+      )
+    }));
   }
 }
 
