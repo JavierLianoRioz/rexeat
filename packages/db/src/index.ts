@@ -31,52 +31,34 @@ export const db = createDb(url, authToken);
  */
 export interface ITenantRepository {
   getInfo(): Promise<typeof schema.organizations.$inferSelect | undefined>;
-  getProducts(): Promise<(typeof schema.products.$inferSelect)[]>;
-  getProduct(
-    id: string,
-  ): Promise<typeof schema.products.$inferSelect | undefined>;
+  getProducts(): Promise<typeof schema.products.$inferSelect[]>;
+  getProduct(id: string): Promise<typeof schema.products.$inferSelect | undefined>;
   updateProduct(
     id: string,
     data: Partial<typeof schema.products.$inferInsert>,
   ): Promise<typeof schema.products.$inferSelect>;
   deleteProduct(id: string): Promise<typeof schema.products.$inferSelect>;
-  updateProductPrice(
-    id: string,
-    price: number,
-  ): Promise<typeof schema.products.$inferSelect>;
+  updateProductPrice(id: string, price: number): Promise<typeof schema.products.$inferSelect>;
   updateProductStatusWithLog(params: {
     productId: string;
     userId: string;
     newStatus: typeof schema.products.$inferSelect.status;
     reason?: string;
-  }): Promise<{
-    product: typeof schema.products.$inferSelect;
-    log: typeof schema.productStockLogs.$inferSelect;
-  }>;
-  getCategories(): Promise<(typeof schema.categories.$inferSelect)[]>;
+  }): Promise<{ product: typeof schema.products.$inferSelect; log: typeof schema.productStockLogs.$inferSelect }>;
+  getCategories(): Promise<typeof schema.categories.$inferSelect[]>;
   createProduct(
     data: Omit<typeof schema.products.$inferInsert, "organizationId">,
   ): Promise<typeof schema.products.$inferSelect>;
   createCategory(
     data: Omit<typeof schema.categories.$inferInsert, "organizationId">,
   ): Promise<typeof schema.categories.$inferSelect>;
-  confirmAllergens(
-    id: string,
-    allergens: AllergenMap,
-  ): Promise<typeof schema.products.$inferSelect>;
-  getFullMenu(): Promise<
-    (typeof schema.categories.$inferSelect & {
-      productsToCategories: (typeof schema.productsToCategories.$inferSelect & {
-        product: typeof schema.products.$inferSelect | null;
-      })[];
-    })[]
-  >;
-  logUsage(
-    logs: Omit<
-      typeof schema.apiUsageLogs.$inferInsert,
-      "organizationId" | "id"
-    >[],
-  ): Promise<void>;
+  confirmAllergens(id: string, allergens: AllergenMap): Promise<typeof schema.products.$inferSelect>;
+  getFullMenu(): Promise<(typeof schema.categories.$inferSelect & { 
+    productsToCategories: (typeof schema.productsToCategories.$inferSelect & { 
+      product: typeof schema.products.$inferSelect | null 
+    })[] 
+  })[]>;
+  logUsage(logs: (Omit<typeof schema.apiUsageLogs.$inferInsert, "organizationId" | "id">)[]): Promise<void>;
 }
 
 export class TenantRepository implements ITenantRepository {
@@ -88,16 +70,11 @@ export class TenantRepository implements ITenantRepository {
   /**
    * Registra el uso de servicios externos (IA, Traducción, etc.)
    */
-  async logUsage(
-    logs: Omit<
-      typeof schema.apiUsageLogs.$inferInsert,
-      "organizationId" | "id"
-    >[],
-  ) {
-    const values = logs.map((log) => ({
+  async logUsage(logs: (Omit<typeof schema.apiUsageLogs.$inferInsert, "organizationId" | "id">)[]) {
+    const values = logs.map(log => ({
       ...log,
       organizationId: this.organizationId,
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID()
     }));
     await this.database.insert(schema.apiUsageLogs).values(values);
   }
@@ -298,27 +275,23 @@ export class TenantRepository implements ITenantRepository {
   }
 
   /**
-   /**
-    * Obtiene el menú completo con categorías y productos, filtrando por inquilino.
-    */
-   async getFullMenu() {
-     return this.database.query.categories.findMany({
-       where: eq(schema.categories.organizationId, this.organizationId),
-       orderBy: (categories, { asc }) => [asc(categories.order)],
-       with: {
-         productsToCategories: {
-           where: eq(schema.productsToCategories.organizationId, this.organizationId),
-           with: {
-             product: {
-               where: eq(schema.products.organizationId, this.organizationId),
-             },
-           },
-         },
-       },
-     });
-   }
-   }
-
+   * Obtiene el menú completo con categorías y productos, filtrando por inquilino.
+   */
+  async getFullMenu() {
+    return this.database.query.categories.findMany({
+      where: eq(schema.categories.organizationId, this.organizationId),
+      orderBy: (categories, { asc }) => [asc(categories.order)],
+      with: {
+        productsToCategories: {
+          where: eq(schema.productsToCategories.organizationId, this.organizationId),
+          with: {
+            product: {
+              where: eq(schema.products.organizationId, this.organizationId),
+            },
+          },
+        },
+      },
+    });
   }
 }
 
