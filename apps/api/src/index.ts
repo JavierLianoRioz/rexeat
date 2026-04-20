@@ -2,11 +2,13 @@
  * © 2026 Rexeat - Todos los derechos reservados.
  * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
  */
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { swaggerUI } from "@hono/swagger-ui";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 import { clerkMiddleware } from "@hono/clerk-auth";
-import { version, type TenantRepository } from "@rexeat/db";
+import { version, type ITenantRepository } from "@rexeat/db";
 
 // Routes
 import { publicMenu } from "./routes/public";
@@ -22,22 +24,50 @@ export type HonoEnv = {
   Variables: {
     orgId: string;
     userId: string;
-    jwtPayload: any;
-    repo: TenantRepository;
+    jwtPayload: unknown;
+    repo: ITenantRepository;
   };
 };
 
 /**
- * Rexeat API - High-performance Edge Backend
+ * Rexeat API - High-performance Edge Backend (OpenAPI Compliant)
  */
-const app = new Hono<HonoEnv>().basePath("/api");
+const app = new OpenAPIHono<HonoEnv>().basePath("/api");
+
+// --- Seguridad Core ---
+app.use("*", secureHeaders());
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      // Permitir solo dominios de Rexeat o localhost en dev
+      if (
+        !origin ||
+        origin.includes("localhost") ||
+        origin.includes("rexeat.com")
+      )
+        return origin;
+      return "https://rexeat.com";
+    },
+    credentials: true,
+  }),
+);
 
 // --- Middlewares ---
 app.use("*", logger());
-app.use("*", cors());
-
-// Clerk middleware global (necesario para las rutas protegidas)
 app.use("*", clerkMiddleware());
+
+// --- OpenAPI Documentation ---
+app.doc("/doc", {
+  openapi: "3.0.0",
+  info: {
+    version: "1.0.0",
+    title: "Rexeat API",
+    description: "Digital Menu System for Tourism (Edge Runtime)",
+  },
+});
+
+app.get("/ui", swaggerUI({ url: "/api/doc" }));
 
 // --- Health Check ---
 app.get("/health", (c) => {
@@ -49,17 +79,12 @@ app.get("/health", (c) => {
   });
 });
 
-// --- Public Routes ---
+// --- Routes ---
 app.route("/public", publicMenu);
-
-// --- Admin & Protected Routes ---
 app.route("/admin", adminStock);
 app.route("/admin/ai", aiRoutes);
-
-// --- Webhooks ---
 app.route("/webhooks", webhooks);
-
-// --- Pusher Auth ---
 app.route("/pusher", pusherAuth);
 
 export default app;
+export type AppType = typeof app;
