@@ -1,211 +1,112 @@
 ---
 name: documentation-templates
-description: Documentation templates and structure guidelines. README, API docs, code comments, and AI-friendly documentation.
+description: Documentation templates and structure guidelines. Atomic Vault, API flows, data contracts, and legal disclaimers.
 allowed-tools: Read, Glob, Grep
 ---
 
-# Documentation Templates
+# Documentation Templates (Rexeat Standard)
 
-> Templates and structure guidelines for common documentation types.
+> Estándares de documentación para el ecosistema Rexeat. Enfoque atómico, técnico y de alta precisión.
 
 ---
 
-## 1. README Structure
+## 🏛️ 1. Estructura del Vault Atómico
 
-### Essential Sections (Priority Order)
+Toda documentación interna en `docs/internal/` debe seguir esta jerarquía obligatoria:
 
-| Section               | Purpose               |
-| --------------------- | --------------------- |
-| **Title + One-liner** | What is this?         |
-| **Quick Start**       | Running in <5 min     |
-| **Features**          | What can I do?        |
-| **Configuration**     | How to customize      |
-| **API Reference**     | Link to detailed docs |
-| **Contributing**      | How to help           |
-| **License**           | Legal                 |
+- **00_Producto_y_Diseno/**: Visión, UX, Sistema de Diseño.
+- **01_Arquitectura_y_Sistemas/**: Infraestructura, Modelos de Datos, APIs, Resiliencia.
+- **02_Ingenieria_y_Desarrollo/**: DX, Estándares de Código, Testing, Monorepo.
+- **03_Operaciones_y_Hardware/**: NFC, Onboarding de locales.
+- **04_Negocio_y_Estrategia/**: Finanzas, GTM, Legal, Tracking.
 
-### README Template
+---
+
+## ⚖️ 2. Guía de Responsabilidad (Alérgenos)
+
+Al documentar funciones de seguridad alimentaria, se DEBE usar un lenguaje que empodere al restaurante sin asumir su responsabilidad legal.
+
+| ❌ Evitar (Culpabilizador/Defensivo) | ✅ Preferir (Soporte/Empoderamiento)         |
+| ------------------------------------ | -------------------------------------------- |
+| "Rexeat no es responsable de..."     | "Rexeat dota al local de una herramienta..." |
+| "La culpa es del restaurante..."     | "La validación final es del profesional..."  |
+| "IA prohibida por errores..."        | "Salvaguarda técnica via control humano..."  |
+
+---
+
+## 🚀 3. Documentación de APIs (Edge-First)
+
+Las APIs de Rexeat (Hono + Vercel Edge) deben documentarse con enfoque en el contrato y el aislamiento.
+
+### Plantilla de Endpoint
 
 ```markdown
-# Project Name
+## [METODO] /ruta/endpoint
 
-Brief one-line description.
+[Descripción breve del propósito]
 
-## Quick Start
+**Estrategia de Aislamiento:** [Middleware utilizado, ej: withTenantRepo]
 
-[Minimum steps to run]
+### Contrato (Zod)
 
-## Features
+- **Input:** `SchemaName` (Query/Body)
+- **Output:** `ResponseSchemaName`
 
-- Feature 1
-- Feature 2
+### Flujo de Datos
 
-## Configuration
-
-| Variable | Description | Default |
-| -------- | ----------- | ------- |
-| PORT     | Server port | 3000    |
-
-## Documentation
-
-- [API Reference](./docs/api.md)
-- [Architecture](./docs/architecture.md)
-
-## License
-
-MIT
+[Diagrama Mermaid simple si el flujo es complejo]
 ```
 
 ---
 
-## 2. API Documentation Structure
+## 🌊 4. Modelado de Flujos y Robustez
 
-### Per-Endpoint Template
+Usar Mermaid para diagramas BCE (Boundary-Control-Entity) o Secuencia.
 
-```markdown
-## GET /users/:id
+### Ejemplo BCE (Robustness)
 
-Get a user by ID.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| id | string | Yes | User ID |
-
-**Response:**
-
-- 200: User object
-- 404: User not found
-
-**Example:**
-[Request and response example]
+```mermaid
+graph LR
+    subgraph Boundary
+        API[PublicMenuAPI]
+    end
+    subgraph Control
+        MA[MenuAggregator]
+    end
+    subgraph Entity
+        PROD((Product))
+    end
+    API --> MA
+    MA --> PROD
 ```
 
 ---
 
-## 3. Code Comment Guidelines
+## 🧩 5. Comentarios de Código (TSDoc)
 
-### JSDoc/TSDoc Template
+Priorizar el "Por qué" sobre el "Qué".
 
 ```typescript
 /**
- * Brief description of what the function does.
+ * Inyecta el repositorio de inquilino validando el orgId del JWT.
  *
- * @param paramName - Description of parameter
- * @returns Description of return value
- * @throws ErrorType - When this error occurs
- *
- * @example
- * const result = functionName(input);
+ * @param c - Contexto de Hono
+ * @param next - Función de continuación
+ * @throws 401 - Si el orgId no está presente en el token
  */
 ```
 
-### When to Comment
+---
 
-| ✅ Comment           | ❌ Don't Comment       |
-| -------------------- | ---------------------- |
-| Why (business logic) | What (obvious)         |
-| Complex algorithms   | Every line             |
-| Non-obvious behavior | Self-explanatory code  |
-| API contracts        | Implementation details |
+## 🛠️ 6. Principios de Estructura
+
+| Principio              | Aplicación                                                |
+| ---------------------- | --------------------------------------------------------- |
+| **Atomicidad**         | Un tema por archivo. Evitar documentos de >500 líneas.    |
+| **Navegabilidad**      | Siempre incluir enlaces "Ver también" al final.           |
+| **Referencia Cruzada** | Vincular a tipos de `@rexeat/types` cuando sea posible.   |
+| **Verificabilidad**    | Las metas técnicas (ej: LCP < 1.2s) deben ser explícitas. |
 
 ---
 
-## 4. Changelog Template (Keep a Changelog)
-
-```markdown
-# Changelog
-
-## [Unreleased]
-
-### Added
-
-- New feature
-
-## [1.0.0] - 2025-01-01
-
-### Added
-
-- Initial release
-
-### Changed
-
-- Updated dependency
-
-### Fixed
-
-- Bug fix
-```
-
----
-
-## 5. Architecture Decision Record (ADR)
-
-```markdown
-# ADR-001: [Title]
-
-## Status
-
-Accepted / Deprecated / Superseded
-
-## Context
-
-Why are we making this decision?
-
-## Decision
-
-What did we decide?
-
-## Consequences
-
-What are the trade-offs?
-```
-
----
-
-## 6. AI-Friendly Documentation (2025)
-
-### llms.txt Template
-
-For AI crawlers and agents:
-
-```markdown
-# Project Name
-
-> One-line objective.
-
-## Core Files
-
-- [src/index.ts]: Main entry
-- [src/api/]: API routes
-- [docs/]: Documentation
-
-## Key Concepts
-
-- Concept 1: Brief explanation
-- Concept 2: Brief explanation
-```
-
-### MCP-Ready Documentation
-
-For RAG indexing:
-
-- Clear H1-H3 hierarchy
-- JSON/YAML examples for data structures
-- Mermaid diagrams for flows
-- Self-contained sections
-
----
-
-## 7. Structure Principles
-
-| Principle              | Why                    |
-| ---------------------- | ---------------------- |
-| **Scannable**          | Headers, lists, tables |
-| **Examples first**     | Show, don't just tell  |
-| **Progressive detail** | Simple → Complex       |
-| **Up to date**         | Outdated = misleading  |
-
----
-
-> **Remember:** Templates are starting points. Adapt to your project's needs.
+> **Mandato AI:** Al crear nuevos documentos, verifica siempre la coherencia con el Portal Maestro en `docs/internal/README.md`.

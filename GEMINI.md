@@ -22,41 +22,37 @@ Rexeat aims to replace traditional PDF menus with a native, web-based experience
 - **Authentication:** Clerk (with a focus on Passkeys/Biometric login for managers).
 - **Security:** Cloudflare Bot Fight Mode and Vercel Firewall to protect against scraping.
 
-## Key Documentation Files
+## Key Documentation Files (Atomic Vault v2.0)
 
-The core project specifications are located in `docs/internal/`:
+The documentation is organized into 5 specialized pillars within `docs/internal/`:
 
-- **[Bóveda del Proyecto](docs/internal/README.md)**: Dashboard central y navegación.
-- **[Visión y Negocio](docs/internal/Vision.md)**: Problemas del mercado, estrategia NFC y modelo de negocio.
-- **[Arquitectura e Infra](docs/internal/Infraestructura.md)**: Detalles del tech stack e integraciones de IA externas.
-- **[APIs y Comunicación](docs/internal/APIs.md)**: Comunicación por sockets en tiempo real y endpoints de administrador.
-- **[UX y Flujos](docs/internal/Diseño.md)**: Principios de diseño de interfaz y accesibilidad.
-- **[Ingeniería Local](docs/internal/Ingenieria.md)**: Entorno de desarrollo, estándares de commit y procedimientos de prueba.
-- **[Finanzas y Economía](docs/internal/Finanzas.md)**: Estructura de costos y modelo de ingresos.
-- **[Base de Datos](docs/internal/BaseDeDatos.md)**: Diagrama ER detallado y estrategia de aislamiento de datos.
-- **[Análisis Estratégico](docs/internal/Analisis_Estrategico.md)**: Análisis PESTEL y OKRs de la fase de lanzamiento.
+1. **[Producto y Diseño (00)](./docs/internal/00_Producto_y_Diseno/):** Visión, UX, flujos y sistema de diseño.
+2. **[Arquitectura y Sistemas (01)](./docs/internal/01_Arquitectura_y_Sistemas/):** Infraestructura Edge, modelos de datos, APIs y resiliencia.
+3. **[Ingeniería y Desarrollo (02)](./docs/internal/02_Ingenieria_y_Desarrollo/):** DX, estándares de código, testing y gestión de monorepo.
+4. **[Operaciones y Hardware (03)](./docs/internal/03_Operaciones_y_Hardware/):** Despliegue de hardware NFC y onboarding de locales.
+5. **[Negocio y Estrategia (04)](./docs/internal/04_Negocio_y_Estrategia/):** Finanzas, GTM, legalidad y tracking de progreso.
+
+_See the [Master Portal (README.md)](docs/internal/README.md) for full navigation._
 
 ## Development Conventions
 
-- **Commits:** Follow Conventional Commits: `type(scope): description` (e.g., `feat(api): add allergen popup`).
+- **Commits:** Follow Conventional Commits: `type(scope): description`.
 - **Testing:** Use **Vitest** for logic validation.
 - **Database:** Use **Drizzle ORM** for SQLite schema management.
 - **Performance:** Target LCP (Largest Contentful Paint) of < 1.2s for the customer-facing web menu.
-- **Data Safety:** Prices are always stored in **cents** as integers to avoid rounding errors.
-- **Compliance & Licensing:** All core business logic and shared types must include the Rexeat copyright header and reference the **Polyform Non-Commercial 1.0.0** license.
+- **Data Safety:** Prices are always stored in **cents** as integers.
 
 ## AI Agent Memory & Guidelines
 
 To ensure consistency and high quality, the AI assistant MUST strictly follow the specialized skills defined in this repository. Before and during tasks, the agent should consult these references:
 
-- **Legal & Compliance**: MUST ensure all new core files (`apps/*/src/index.ts`, `packages/*/src/index.ts`) include the copyright notice to prevent missing commercial restrictions.
+- **Documentation Standards**: [Documentation Templates](.agents/skills/documentation-templates/SKILL.md) — MUST follow the Atomic Vault structure and API flow templates.
+- **Legal & Compliance**: MUST ensure all new core files include the copyright notice. Allergen information is always **manual-only** (Support tool focus).
 - **Coding Quality**: [Clean Code](.agents/skills/clean-code/SKILL.md) & [Best Practices](.agents/skills/best-practices/SKILL.md)
-- **Version Control**: [Git Commit Helper](.agents/skills/git-commit-helper/SKILL.md)
 - **Architecture**: [Monorepo](.agents/skills/monorepo-architect/SKILL.md), [Multi-tenant SaaS](.agents/skills/saas-multi-tenant/SKILL.md), & [React Native](.agents/skills/react-native-architecture/SKILL.md)
-- **Database**: [Drizzle ORM Expert](.agents/skills/drizzle-orm-expert/SKILL.md) & [Database Architect](.agents/skills/database-architect/SKILL.md)
+- **Database**: [Drizzle ORM Expert](.agents/skills/drizzle-orm-expert/SKILL.md)
 - **Authentication**: [Clerk Auth](.agents/skills/clerk-auth/SKILL.md)
-- **User Experience**: [UX Research & Design](.agents/skills/ux-researcher-designer/SKILL.md)
 
 ## Usage
 
-This directory acts as the **Source of Truth** for the project's architecture and vision. All engineering tasks should reference these documents to ensure consistency with the established multi-tenant and high-performance requirements.
+This directory acts as the **Source of Truth**. All engineering tasks should reference these atomic documents to ensure consistency with the established multi-tenant and high-performance requirements.
