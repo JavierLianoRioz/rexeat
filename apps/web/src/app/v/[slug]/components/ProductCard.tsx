@@ -23,7 +23,7 @@ export function ProductCard({ product, allergenIcons }: ProductCardProps) {
             fill
             className="rounded-xl object-cover"
             placeholder={product.image.blurHash ? "blur" : "empty"}
-            blurDataURL={product.image.blurHash}
+            {...(product.image.blurHash ? { blurDataURL: product.image.blurHash } : {})}
             sizes="96px"
           />
         </div>
