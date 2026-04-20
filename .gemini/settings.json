@@ -1,7 +1,24 @@
 {
   "skills": {
     "disabled": [
-      "nixos-best-practices"
+      "nixos-best-practices",
+      "caveman"
     ]
+  },
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem"
+      ]
+    }
   }
 }
