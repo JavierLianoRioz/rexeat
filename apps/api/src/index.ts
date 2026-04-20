@@ -7,7 +7,6 @@ import { swaggerUI } from "@hono/swagger-ui";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
-import { clerkMiddleware } from "@hono/clerk-auth";
 import { version, type ITenantRepository } from "@rexeat/db";
 
 // Routes
@@ -87,7 +86,7 @@ app.route("/admin/ai", aiRoutes);
 app.route("/webhooks", webhooks);
 app.route("/pusher", pusherAuth);
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env["NODE_ENV"] !== "production") {
   const port = 3001;
   console.log(`🚀 API running on http://localhost:${port}`);
   serve({
