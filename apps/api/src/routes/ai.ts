@@ -4,63 +4,80 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { getAIClient } from "../lib/ai";
-import { TranslationService } from "../lib/translation";
+import { AIService } from "../lib/services/AIService";
 import { requireOrgAuth } from "../middleware/auth";
-import { db, apiUsageLogs } from "@rexeat/db";
+import { withTenantRepo } from "../middleware/db";
+import { isolationGuard } from "../middleware/isolation";
 import type { HonoEnv } from "../index";
 
+/**
+ * Rutas de IA (Boundary Layer)
+ * Responsabilidad: Parsing de entrada, Gestión de errores HTTP y respuesta JSON.
+ */
 export const aiRoutes = new Hono<HonoEnv>();
 
+// Cadena de seguridad robusta
 aiRoutes.use("*", requireOrgAuth);
+aiRoutes.use("*", withTenantRepo);
+aiRoutes.use("*", isolationGuard);
 
 const translateSchema = z.object({
   texts: z.array(z.string().min(1)).or(z.string().min(1)),
 });
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /**
  * POST /api/admin/ai/digitize
  */
 aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
   const formData = await c.req.formData();
-  const image = formData.get("image") as File | null;
+  const image = formData.get("image");
 
-  if (!image) {
+  // 1. Validar existencia y tipo de objeto
+  if (!image || !(image instanceof File)) {
     return c.json(
-      { error: { code: "BAD_REQUEST", message: "No image provided" } },
+      {
+        error: { code: "BAD_REQUEST", message: "No valid image file provided" },
+      },
       400,
     );
   }
 
+  // 2. Validar tamaño (Prevención de DoS)
+  if (image.size > MAX_FILE_SIZE) {
+    return c.json(
+      {
+        error: {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Image size exceeds 5MB limit",
+        },
+      },
+      413,
+    );
+  }
+
+  // 3. Validar tipo MIME
+  if (!ALLOWED_MIME_TYPES.includes(image.type)) {
+    return c.json(
+      {
+        error: {
+          code: "UNSUPPORTED_MEDIA_TYPE",
+          message: "Only JPEG, PNG and WEBP are supported",
+        },
+      },
+      415,
+    );
+  }
+
   try {
-    const aiClient = getAIClient();
     const orgId = c.get("orgId");
+    const repo = c.get("repo");
+    const aiService = new AIService(orgId, repo);
+
     const buffer = await image.arrayBuffer();
-
-    const result = await aiClient.digitizeMenu(buffer, image.type, orgId);
-
-    // Auditoría de consumo: IA (OpenRouter)
-    c.executionCtx.waitUntil(
-      db.insert(apiUsageLogs).values({
-        organizationId: orgId,
-        service: "openrouter",
-        model: result.usage.model,
-        inputAmount: result.usage.promptTokens,
-        outputAmount: result.usage.completionTokens,
-        costEstimate: result.usage.aiCostMillicents,
-      }),
-    );
-
-    // Auditoría de consumo: Traducción (DeepL)
-    c.executionCtx.waitUntil(
-      db.insert(apiUsageLogs).values({
-        organizationId: orgId,
-        service: "deepl",
-        model: "deepl-v2",
-        inputAmount: 0, // No aplica tokens, usamos caracteres
-        costEstimate: result.usage.translationCostMillicents,
-      }),
-    );
+    const result = await aiService.digitizeMenu(buffer, image.type);
 
     return c.json({
       success: true,
@@ -72,7 +89,8 @@ aiRoutes.post("/digitize", async (c: Context<HonoEnv>) => {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "AI Error";
+    console.error(`[AI_DIGITIZE_ERROR] Org: ${c.get("orgId")}`, err);
+    const message = err instanceof Error ? err.message : "Internal AI Error";
     return c.json({ error: { code: "AI_ERROR", message } }, 500);
   }
 });
@@ -85,25 +103,12 @@ aiRoutes.post("/translate", zValidator("json", translateSchema), async (c) => {
     texts: string[] | string;
   };
   const orgId = c.get("orgId");
+  const repo = c.get("repo");
 
   try {
-    const deeplKey = process.env["DEEPL_API_KEY"];
-    if (!deeplKey) throw new Error("DeepL API Key missing");
-
-    const translationService = new TranslationService(deeplKey);
+    const aiService = new AIService(orgId, repo);
     const inputTexts = Array.isArray(texts) ? texts : [texts];
-    const result = await translationService.translateBatch(inputTexts);
-
-    // Auditoría de consumo (DeepL)
-    c.executionCtx.waitUntil(
-      db.insert(apiUsageLogs).values({
-        organizationId: orgId,
-        service: "deepl",
-        model: "deepl-v2",
-        inputAmount: result.usage.characters,
-        costEstimate: result.usage.costEstimate,
-      }),
-    );
+    const result = await aiService.translateBatch(inputTexts);
 
     return c.json({
       success: true,
