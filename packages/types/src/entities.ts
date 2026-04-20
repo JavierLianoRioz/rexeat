@@ -16,6 +16,7 @@ export const ProductSchema = z.object({
   description: TranslatedStringSchema,
   price: CentsSchema,
   allergens: AllergenMapSchema,
+  allergensConfirmed: z.boolean().default(false),
   status: AvailabilityStatusSchema,
   image: ImageMetadataSchema.optional(),
   createdAt: z.date(),
