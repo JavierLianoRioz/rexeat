@@ -16,6 +16,7 @@ import { adminStock } from "./routes/admin";
 import { aiRoutes } from "./routes/ai";
 import { webhooks } from "./routes/webhooks";
 import { pusherAuth } from "./routes/pusher";
+import { serve } from "@hono/node-server";
 
 /**
  * Entorno de Hono compartido en toda la aplicación.
@@ -55,7 +56,7 @@ app.use(
 
 // --- Middlewares ---
 app.use("*", logger());
-app.use("*", clerkMiddleware());
+// app.use("*", clerkMiddleware());
 
 // --- OpenAPI Documentation ---
 app.doc("/doc", {
@@ -85,6 +86,15 @@ app.route("/admin", adminStock);
 app.route("/admin/ai", aiRoutes);
 app.route("/webhooks", webhooks);
 app.route("/pusher", pusherAuth);
+
+if (process.env.NODE_ENV !== "production") {
+  const port = 3001;
+  console.log(`🚀 API running on http://localhost:${port}`);
+  serve({
+    fetch: app.fetch,
+    port,
+  });
+}
 
 export default app;
 export type AppType = typeof app;
