@@ -4,6 +4,7 @@ export { createClient }; // Exportar para uso en tests o herramientas externas
 import { eq, and } from "drizzle-orm";
 import * as schema from "./schema";
 import { type AllergenMap } from "@rexeat/types";
+import path from "node:path";
 
 // Re-exportar esquema para conveniencia
 export * from "./schema";
@@ -18,9 +19,11 @@ export function createDb(url: string = "file:local.db", authToken?: string) {
   return drizzle(client, { schema });
 }
 
-// Singleton de base de datos por defecto (usando variables de entorno o local.db)
-// En Vercel/Producción se usaría process.env.TURSO_DATABASE_URL
-const url = process.env["TURSO_DATABASE_URL"] || "file:local.db";
+// Singleton de base de datos por defecto
+// Usamos una ruta absoluta relativa al root del monorepo para consistencia
+const rootDir = path.resolve(__dirname, "../../../");
+const localDbPath = path.join(rootDir, "rexeat_final.db");
+const url = process.env["TURSO_DATABASE_URL"] || `file:${localDbPath}`;
 const authToken = process.env["TURSO_AUTH_TOKEN"];
 
 export const db = createDb(url, authToken);

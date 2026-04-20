@@ -214,12 +214,17 @@ const CANTABRIAN_DISHES = [
 ];
 
 async function cleanupDatabase() {
-  await db.delete(productsToCategories);
-  await db.delete(categories);
-  await db.delete(products);
-  await db.delete(zones);
-  await db.delete(locals);
-  await db.delete(organizations);
+  console.log(`Using database at: ${process.env["TURSO_DATABASE_URL"] || "default local.db"}`);
+  try {
+    await db.delete(productsToCategories);
+    await db.delete(categories);
+    await db.delete(products);
+    await db.delete(zones);
+    await db.delete(locals);
+    await db.delete(organizations);
+  } catch (e) {
+    console.log("Cleanup failed (likely tables don't exist), skipping...");
+  }
 }
 
 function getRandomImage(width: number, height: number) {
