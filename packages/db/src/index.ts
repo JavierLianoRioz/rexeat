@@ -298,24 +298,27 @@ export class TenantRepository implements ITenantRepository {
   }
 
   /**
-   * Obtiene el menú completo con categorías y productos, filtrando por inquilino.
-   */
-  async getFullMenu() {
-    return this.database.query.categories.findMany({
-      where: eq(schema.categories.organizationId, this.organizationId),
-      orderBy: (categories, { asc }) => [asc(categories.order)],
-      with: {
-        productsToCategories: {
-          where: eq(
-            schema.productsToCategories.organizationId,
-            this.organizationId,
-          ),
-          with: {
-            product: true,
-          },
-        },
-      },
-    });
+   /**
+    * Obtiene el menú completo con categorías y productos, filtrando por inquilino.
+    */
+   async getFullMenu() {
+     return this.database.query.categories.findMany({
+       where: eq(schema.categories.organizationId, this.organizationId),
+       orderBy: (categories, { asc }) => [asc(categories.order)],
+       with: {
+         productsToCategories: {
+           where: eq(schema.productsToCategories.organizationId, this.organizationId),
+           with: {
+             product: {
+               where: eq(schema.products.organizationId, this.organizationId),
+             },
+           },
+         },
+       },
+     });
+   }
+   }
+
   }
 }
 
