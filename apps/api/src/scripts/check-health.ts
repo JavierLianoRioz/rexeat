@@ -6,7 +6,6 @@ import * as dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db, organizations } from "@rexeat/db";
-import { AIClient } from "../lib/ai";
 import { TranslationService } from "../lib/translation";
 import { S3Client, ListBucketsCommand } from "@aws-sdk/client-s3";
 

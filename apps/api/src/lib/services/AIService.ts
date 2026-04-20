@@ -3,7 +3,7 @@
  * Este archivo está protegido bajo la licencia Polyform Non-Commercial 1.0.0.
  */
 import { type ITenantRepository } from "@rexeat/db";
-import { getAIClient, type DigitizedMenu } from "../ai";
+import { getAIClient, type DigitizationResult } from "../ai";
 import { TranslationService } from "../translation";
 
 /**
@@ -14,24 +14,17 @@ import { TranslationService } from "../translation";
 export class AIService {
   constructor(
     private readonly orgId: string,
-    private readonly repo: ITenantRepository,
+    private readonly repo: ITenantRepository
   ) {}
 
   /**
    * Ejecuta el flujo completo de digitalización y audita el consumo.
    */
-  async digitizeMenu(
-    imageBuffer: ArrayBuffer,
-    mimeType: string,
-  ): Promise<DigitizedMenu> {
+  async digitizeMenu(imageBuffer: ArrayBuffer, mimeType: string): Promise<DigitizationResult> {
     const aiClient = getAIClient();
 
     // 1. Llamada a la Entidad Externa (IA)
-    const result = await aiClient.digitizeMenu(
-      imageBuffer,
-      mimeType,
-      this.orgId,
-    );
+    const result = await aiClient.digitizeMenu(imageBuffer, mimeType, this.orgId);
 
     // 2. Orquestación de Auditoría vía Repositorio (Clean Architecture)
     await this.repo.logUsage([
@@ -45,6 +38,14 @@ export class AIService {
       {
         service: "deepl",
         model: "deepl-v2",
+        inputAmount: 0,
+        costEstimate: result.usage.translationCostMillicents,
+      }
+    ]);
+
+    return result;
+  }
+
         inputAmount: 0,
         costEstimate: result.usage.translationCostMillicents,
       },
