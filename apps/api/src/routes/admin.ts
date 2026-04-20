@@ -6,9 +6,10 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { type AvailabilityStatus } from "@rexeat/db";
-import { TranslatedStringSchema } from "@rexeat/types";
+import { TranslatedStringSchema, ImageMetadataSchema } from "@rexeat/types";
 import { requireOrgAuth } from "../middleware/auth";
 import { withTenantRepo } from "../middleware/db";
+import { isolationGuard } from "../middleware/isolation";
 import type { HonoEnv } from "../index";
 import { pusher } from "../lib/pusher";
 
@@ -18,9 +19,10 @@ import { pusher } from "../lib/pusher";
  */
 export const adminStock = new Hono<HonoEnv>();
 
-// Aplicamos la cadena de seguridad: Autenticación -> Inyección de Repo
+// Aplicamos la cadena de seguridad: Autenticación -> Inyección de Repo -> Blindaje de Aislamiento
 adminStock.use("*", requireOrgAuth);
 adminStock.use("*", withTenantRepo);
+adminStock.use("*", isolationGuard);
 
 /**
  * Esquema de validación para cambios de estado de stock.
@@ -49,7 +51,7 @@ const productSchema = z.object({
     "hidden",
     "temporarily_unavailable",
   ]),
-  image: z.any().optional(),
+  image: ImageMetadataSchema.optional(),
 });
 
 /**
